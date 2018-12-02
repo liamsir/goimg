@@ -43,7 +43,7 @@ func main() {
 
 	if port == "" {
 		// log.Fatal("$PORT must be set")
-		port = ":3001"
+		port = ":8080"
 	}
 	router := httprouter.New()
 	router.GET("/user/:user/resource/:resource/modifiers/:modifiers", handler)
