@@ -46,5 +46,5 @@ func main() {
 	}
 	router := httprouter.New()
 	router.GET("/user/:user/resource/:resource/modifiers/:modifiers", handler)
-	log.Fatal(http.ListenAndServe(port, router))
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }
