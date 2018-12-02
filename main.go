@@ -40,10 +40,9 @@ func handler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 func main() {
 	port := os.Getenv("PORT")
-
+	log.Println(port)
 	if port == "" {
 		log.Fatal("$PORT must be set")
-		port = ":80"
 	}
 	router := httprouter.New()
 	router.GET("/user/:user/resource/:resource/modifiers/:modifiers", handler)
