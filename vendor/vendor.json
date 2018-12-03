@@ -7,6 +7,24 @@
 			"path": "github.com/julienschmidt/httprouter",
 			"revision": "26a05976f9bf5c3aa992cc20e8588c359418ee58",
 			"revisionTime": "2018-10-21T22:38:31Z"
+		},
+		{
+			"checksumSHA1": "xxLSo5tKtXc7jGrR70yoEfza8Cw=",
+			"path": "github.com/lib/pq",
+			"revision": "9eb73efc1fcc404148b56765b0d3f61d9a5ef8ee",
+			"revisionTime": "2018-10-16T16:26:27Z"
+		},
+		{
+			"checksumSHA1": "ATnwV0POluBNQEMjPdylodz0oK0=",
+			"path": "github.com/lib/pq/oid",
+			"revision": "9eb73efc1fcc404148b56765b0d3f61d9a5ef8ee",
+			"revisionTime": "2018-10-16T16:26:27Z"
+		},
+		{
+			"checksumSHA1": "6z9MgcvNbdVGsAIvv6BHA1uALQA=",
+			"path": "github.com/nfnt/resize",
+			"revision": "83c6a9932646f83e3267f353373d47347b6036b2",
+			"revisionTime": "2018-02-21T19:10:11Z"
 		}
 	],
 	"rootPath": "imgserver"
