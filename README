@@ -1,1 +1,22 @@
 https://github.com/kardianos/govendor
+gin run imgserver.go
+export PATH=$PATH:/usr/local/go/bin
+export PATH=$PATH:~/go/bin/
+http://localhost:3000/user/ismajl/resource/nature.jpeg/modifiers/resizew120h120
+http://localhost:3000/user/ismajl/resource/nature.jpeg
+localhost:3000/user/ismajl/resource/nature.jpeg/modifiers/resize_w100_h100
+// fmt.Println(providerUrl)
+// response, e := http.Get(providerUrl)
+// if e != nil {
+// 	log.Fatal(e)
+// }
+// defer response.Body.Close()
+// w.Header().Set("Content-Type", "image/jpeg")
+// io.Copy(w, response.Body)
+// func createKeyValuePairs(m map[string][]string) string {
+// 	b := new(bytes.Buffer)
+// 	for key, value := range m {
+// 		fmt.Fprintf(b, " %s=\"%s\"", key, value[0])
+// 	}
+// 	return b.String()
+// }
