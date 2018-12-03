@@ -21,3 +21,5 @@ localhost:3000/user/ismajl/resource/nature.jpeg/modifiers/resize_w100_h100
 // 	return b.String()
 // }
 govendor add +external
+
+export GOOGLE_APPLICATION_CREDENTIALS="/home/ubuntu/Downloads/MyProject-89e0f34eb7a6.json"
