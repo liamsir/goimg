@@ -71,7 +71,6 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 	if err, ok := err.(*pq.Error); ok {
 		fmt.Println("pq error:", err.Code.Name())
 	}
-
 	var orHash string
 	var mdfHash string
 	var userId int32
@@ -116,7 +115,7 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 		w.Header().Set("Content-Length", strconv.Itoa(len(buf)))
 		w.Header().Set("Content-Type", "image/jpeg")
 		w.Write(buf)
-
+		db.Close()
 		return
 	}
 
@@ -240,6 +239,8 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 			w.Header().Set("Content-Length", strconv.Itoa(len(sendBuf)))
 			w.Header().Set("Content-Type", "image/jpeg")
 			w.Write(sendBuf)
+			db.Close()
+			return
 		}
 
 	}
@@ -247,32 +248,33 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 
 func fetchImage(url *url.URL) ([]byte, error) {
 	// Check remote image size by fetching HTTP Headers
-	MaxAllowedSize := 5 * 1024 * 1000
-	if MaxAllowedSize > 0 {
-		var ireq *http.Request
-		req := newHTTPRequest(ireq, "HEAD", url)
-		res, err := http.DefaultClient.Do(req)
-
-		if err != nil {
-			return nil, fmt.Errorf("Error fetching image http headers: %v", err)
-		}
-
-		res.Body.Close()
-
-		if res.StatusCode < 200 && res.StatusCode > 206 {
-			return nil, fmt.Errorf("Error fetching image http headers: (status=%d) (url=%s)", res.StatusCode, req.URL.String())
-		}
-
-		contentLength, _ := strconv.Atoi(res.Header.Get("Content-Length"))
-
-		if contentLength > MaxAllowedSize {
-			return nil, fmt.Errorf("Content-Length %d exceeds maximum allowed %d bytes", contentLength, MaxAllowedSize)
-		}
-	}
+	// MaxAllowedSize := 5 * 1024 * 1000
+	// if MaxAllowedSize > 0 {
+	// 	var ireq *http.Request
+	// 	req := newHTTPRequest(ireq, "HEAD", url)
+	// 	res, err := http.DefaultClient.Do(req)
+	//
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("Error fetching image http headers: %v", err)
+	// 	}
+	//
+	// 	res.Body.Close()
+	//
+	// 	if res.StatusCode < 200 && res.StatusCode > 206 {
+	// 		return nil, fmt.Errorf("Error fetching image http headers: (status=%d) (url=%s)", res.StatusCode, req.URL.String())
+	// 	}
+	//
+	// 	contentLength, _ := strconv.Atoi(res.Header.Get("Content-Length"))
+	//
+	// 	if contentLength > MaxAllowedSize {
+	// 		return nil, fmt.Errorf("Content-Length %d exceeds maximum allowed %d bytes", contentLength, MaxAllowedSize)
+	// 	}
+	// }
 
 	// Perform the request using the default client
-	var ireq *http.Request
-	req := newHTTPRequest(ireq, "GET", url)
+	req, _ := http.NewRequest("GET", url.String(), nil)
+	req.Header.Set("User-Agent", "imgserver/1.0.0")
+	req.URL = url
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("Error downloading image: %v", err)
@@ -290,12 +292,12 @@ func fetchImage(url *url.URL) ([]byte, error) {
 	return buf, nil
 }
 
-func newHTTPRequest(ireq *http.Request, method string, url *url.URL) *http.Request {
-	req, _ := http.NewRequest(method, url.String(), nil)
-	req.Header.Set("User-Agent", "imgserver/1.0.0")
-	req.URL = url
-	return req
-}
+// func newHTTPRequest(ireq *http.Request, method string, url *url.URL) *http.Request {
+// 	req, _ := http.NewRequest(method, url.String(), nil)
+// 	req.Header.Set("User-Agent", "imgserver/1.0.0")
+// 	req.URL = url
+// 	return req
+// }
 
 func main() {
 	port := os.Getenv("PORT")
