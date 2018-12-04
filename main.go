@@ -18,6 +18,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/google/uuid"
+	"github.com/julienschmidt/httprouter"
 	"github.com/lib/pq"
 	"github.com/nfnt/resize"
 	"google.golang.org/api/option"
@@ -35,28 +36,13 @@ func userHasPermissionsToPerformOperations(
 	return true
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	routePath := r.URL.String()
-	routeSplited := strings.Split(routePath, "modifiers")
+func handler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	var paramModifiers = ""
-	var paramResource = ""
-	var paramUser = ""
+	paramModifiers := ps.ByName("modifiers")
+	paramResource := ps.ByName("resource")[1:]
+	paramUser := ps.ByName("user")
 
-	if len(routeSplited) > 1 {
-		paramModifiers = routeSplited[1][1:]
-		resourceSplited := strings.Split(routeSplited[0], "resource")
-		if len(resourceSplited) > 1 {
-			paramResource = resourceSplited[1][1 : len(resourceSplited[1])-1]
-			userSplited := strings.Split(resourceSplited[0], "user")
-			if len(userSplited) > 1 {
-				paramUser = userSplited[1][1 : len(userSplited[1])-1]
-			}
-		}
-	} else {
-		return
-	}
-
+	fmt.Println("querying db...")
 	user := paramUser
 	resourceModifiers := paramResource + paramModifiers
 	resModHash := fmt.Sprint(hash(resourceModifiers))
@@ -71,6 +57,7 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 	if err, ok := err.(*pq.Error); ok {
 		fmt.Println("pq error:", err.Code.Name())
 	}
+
 	var orHash string
 	var mdfHash string
 	var userId int32
@@ -96,17 +83,23 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 			mdfHash = hash
 		}
 	}
-	if mdfHash != "" {
+	fmt.Println("end querying db")
+	if mdfHash != "" || paramModifiers == "" {
+		fmt.Println("downloading resource...")
 		// get file from storage using hash and return as image
 		providerUrl := fmt.Sprintf(
-			"https://storage.googleapis.com/imgmdf/%d/%s_/%s",
+			"https://storage.googleapis.com/imgmdf/%d/%s",
 			userId,
 			orHash,
-			mdfHash)
+		)
+		if mdfHash != "" {
+			providerUrl = fmt.Sprintf("%s_/%s", providerUrl, mdfHash)
+		}
 		u, err := url.Parse(providerUrl)
 		if err != nil {
 			panic(err)
 		}
+
 		buf, err := fetchImage(u)
 
 		if err != nil {
@@ -116,6 +109,8 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 		w.Header().Set("Content-Type", "image/jpeg")
 		w.Write(buf)
 		db.Close()
+		fmt.Println("served from cache")
+		fmt.Println("done")
 		return
 	}
 
@@ -138,6 +133,79 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 			// If it's url, then try to download the resource and save in
 			// blob storage and in db
 			providerUrl = paramResource
+			fmt.Println("resource does not exist", paramResource)
+			u, err := url.Parse(paramResource)
+			if err != nil {
+				panic(err)
+			}
+			buf, err := fetchImage(u)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Print(len(buf))
+			r := bytes.NewReader(buf)
+			ctx := context.Background()
+			client, err := storage.NewClient(ctx, option.WithCredentialsFile("MyProject-89e0f34eb7a6.json"))
+
+			if err != nil {
+				log.Fatalf("Failed to create client: %v", err)
+			}
+			// Sets the name for the new bucket.
+			bucketName := "imgmdf"
+			// Creates a Bucket instance.
+			bucket := client.Bucket(bucketName)
+			obj := bucket.Object("1/" + resHash)
+			wc := obj.NewWriter(ctx)
+
+			if _, err = io.Copy(wc, r); err != nil {
+				panic(err)
+			}
+			if err := wc.Close(); err != nil {
+				panic(err)
+			}
+
+			acl := obj.ACL()
+			if err := acl.Set(ctx, storage.AllUsers, storage.RoleReader); err != nil {
+				panic(err)
+			}
+			sqlStatement := `
+			INSERT INTO public.file
+				(created_at, modified_at, last_opened, guid, hash, "index", parent_id, visible, "name", description, "type", allowed_operations, performed_operations)
+				VALUES(now(), now(), now(), $1, $2, 0, null, true, $3, '', 0, '', $4) RETURNING id;`
+			fileGuid, err := uuid.NewRandom()
+			fmt.Print("fileGuid", fileGuid)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Printf("%s", fileGuid)
+			var newFileId int
+			errIn := db.QueryRow(sqlStatement, fileGuid, resHash, paramResource, resourceModifiers).Scan(&newFileId)
+			if errIn != nil {
+				log.Fatal(errIn)
+			}
+			fmt.Printf("%s", fileGuid)
+
+			insertUserFile := `
+			INSERT INTO public.user_file
+			(user_id,
+				file_id,
+				"type",
+				"role",
+				created_at,
+				modified_at, visible) VALUES($1, $2, 1, 0, now(), now(), true);`
+			fmt.Println("New record ID is:", newFileId)
+
+			//userId when resource is url
+			_, errInsert := db.Exec(insertUserFile, 1, newFileId)
+			if errInsert != nil {
+				panic(err)
+			}
+			providerUrl = fmt.Sprintf(
+				"https://storage.googleapis.com/imgmdf/%d/%s",
+				1,
+				resHash)
+			fmt.Println("providerUrl", providerUrl)
 		}
 
 		u, err := url.Parse(providerUrl)
@@ -242,7 +310,6 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 			db.Close()
 			return
 		}
-
 	}
 }
 
@@ -306,10 +373,10 @@ func main() {
 		port = "3001"
 		log.Fatal("$PORT must be set")
 	}
-	http.HandleFunc("/", handler)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
-	// router := httprouter.New()
-	// router.GET("/user/:user/resource/:resource/modifiers/:modifiers", handler)
-	// router.GET("/user/:user/resource/:resource/", handler)
-	// log.Fatal(http.ListenAndServe(":"+port, router))
+	// http.HandleFunc("/", handler)
+	// log.Fatal(http.ListenAndServe(":"+port, nil))
+	router := httprouter.New()
+	router.GET("/user/:user/modifiers/:modifiers/resource/*resource", handler)
+	router.GET("/user/:user/resource/*resource", handler)
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }
