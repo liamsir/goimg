@@ -81,6 +81,12 @@
 			"revisionTime": "2018-11-28T19:23:52Z"
 		},
 		{
+			"checksumSHA1": "yNyE9MrpDJQAxOxSipSIBgBhuNQ=",
+			"path": "github.com/google/uuid",
+			"revision": "9b3b1e0f5f99ae461456d768e7d301a7acdaa2d8",
+			"revisionTime": "2018-09-17T14:00:05Z"
+		},
+		{
 			"checksumSHA1": "ISm04rsH/ZHtW2sVLwgDflPuHxU=",
 			"path": "github.com/googleapis/gax-go",
 			"revision": "289fb28c333ea06e7d38a6e7b47b7c234198a6c2",
