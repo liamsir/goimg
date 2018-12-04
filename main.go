@@ -100,10 +100,10 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 	if mdfHash != "" {
 		// get file from storage using hash and return as image
 		providerUrl := fmt.Sprintf(
-			"https://storage.googleapis.com/imgmdf/%d/%s",
+			"https://storage.googleapis.com/imgmdf/%d/%s_/%s",
 			userId,
+			orHash,
 			mdfHash)
-
 		u, err := url.Parse(providerUrl)
 		if err != nil {
 			panic(err)
@@ -116,6 +116,7 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 		w.Header().Set("Content-Length", strconv.Itoa(len(buf)))
 		w.Header().Set("Content-Type", "image/jpeg")
 		w.Write(buf)
+
 		return
 	}
 
@@ -186,7 +187,7 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 			bucketName := "imgmdf"
 			// Creates a Bucket instance.
 			bucket := client.Bucket(bucketName)
-			obj := bucket.Object("1/" + resModHash)
+			obj := bucket.Object("1/" + orHash + "_/" + resModHash)
 			wc := obj.NewWriter(ctx)
 
 			if _, err = io.Copy(wc, bufOut); err != nil {
