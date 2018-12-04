@@ -2,12 +2,10 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"database/sql"
 	"fmt"
 	"hash/fnv"
 	"image/jpeg"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -17,10 +15,8 @@ import (
 	"strconv"
 	"strings"
 
-	"cloud.google.com/go/storage"
 	"github.com/lib/pq"
 	"github.com/nfnt/resize"
-	"google.golang.org/api/option"
 )
 
 func hash(s string) uint32 {
@@ -175,31 +171,32 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 			bufOut := new(bytes.Buffer)
 			err = jpeg.Encode(bufOut, newImage, nil)
 			sendBuf := bufOut.Bytes()
-
-			ctx := context.Background()
-			client, err := storage.NewClient(ctx, option.WithCredentialsFile("MyProject-89e0f34eb7a6.json"))
-
-			if err != nil {
-				log.Fatalf("Failed to create client: %v", err)
-			}
-			// Sets the name for the new bucket.
-			bucketName := "imgmdf"
-			// Creates a Bucket instance.
-			bucket := client.Bucket(bucketName)
-			obj := bucket.Object("1/" + resModHash)
-			wc := obj.NewWriter(ctx)
-
-			if _, err = io.Copy(wc, bufOut); err != nil {
-				panic(err)
-			}
-			if err := wc.Close(); err != nil {
-				panic(err)
-			}
-
-			acl := obj.ACL()
-			if err := acl.Set(ctx, storage.AllUsers, storage.RoleReader); err != nil {
-				panic(err)
-			}
+			//start save on google storage cloud
+			// ctx := context.Background()
+			// client, err := storage.NewClient(ctx, option.WithCredentialsFile("MyProject-89e0f34eb7a6.json"))
+			//
+			// if err != nil {
+			// 	log.Fatalf("Failed to create client: %v", err)
+			// }
+			// // Sets the name for the new bucket.
+			// bucketName := "imgmdf"
+			// // Creates a Bucket instance.
+			// bucket := client.Bucket(bucketName)
+			// obj := bucket.Object("1/" + resModHash)
+			// wc := obj.NewWriter(ctx)
+			//
+			// if _, err = io.Copy(wc, bufOut); err != nil {
+			// 	panic(err)
+			// }
+			// if err := wc.Close(); err != nil {
+			// 	panic(err)
+			// }
+			//
+			// acl := obj.ACL()
+			// if err := acl.Set(ctx, storage.AllUsers, storage.RoleReader); err != nil {
+			// 	panic(err)
+			// }
+			//end save on google storage cloud
 			//save metadata in db
 			sqlStatement := `
 			INSERT INTO public.file
