@@ -108,7 +108,7 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 		if err != nil {
 			panic(err)
 		}
-		buf, err := fetchImage(u, r)
+		buf, err := fetchImage(u)
 
 		if err != nil {
 			return
@@ -147,7 +147,7 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 		}
 		fmt.Print(providerUrl)
 
-		buf, err := fetchImage(u, r)
+		buf, err := fetchImage(u)
 		if err != nil {
 			panic(err)
 		}
@@ -245,10 +245,11 @@ where (f.hash = $1 and f.type = 0) or f.hash = $2 and uf.user_id = (select id fr
 	}
 }
 
-func fetchImage(url *url.URL, ireq *http.Request) ([]byte, error) {
+func fetchImage(url *url.URL) ([]byte, error) {
 	// Check remote image size by fetching HTTP Headers
 	MaxAllowedSize := 5 * 1024 * 1000
 	if MaxAllowedSize > 0 {
+		var ireq *http.Request
 		req := newHTTPRequest(ireq, "HEAD", url)
 		res, err := http.DefaultClient.Do(req)
 
@@ -270,6 +271,7 @@ func fetchImage(url *url.URL, ireq *http.Request) ([]byte, error) {
 	}
 
 	// Perform the request using the default client
+	var ireq *http.Request
 	req := newHTTPRequest(ireq, "GET", url)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
