@@ -81,16 +81,3 @@ func downloadResourceAndSaveInBlob(params downloadAndSaveObjectParams) (string, 
 		)
 	return remoteResource, nil
 }
-
-// buf, err := fetchImage(paramResource)
-// if err != nil {
-// 	panic(err)
-// }
-// // 		// Sets the name for the new bucket.
-// saveObject(fileObject{Body: buf, Name: "1/" + "resHash"})
-
-// providerUrl = fmt.Sprintf(
-// 	"https://storage.googleapis.com/imgmdf/%d/%s",
-// 	1,
-// 	resHash)
-// fmt.Println("providerUrl", providerUrl)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -97,19 +98,26 @@ func handler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 }
 
+func healthController(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	health := GetHealthStats()
+	body, _ := json.Marshal(health)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(body)
+}
 func main() {
 
 	port := os.Getenv("PORT")
 
 	if port == "" {
 		port = "3001"
-		log.Fatal("$PORT must be set")
+		// log.Fatal("$PORT must be set")
 	}
 
 	router := httprouter.New()
 
 	router.GET("/user/:user/modifiers/:modifiers/resource/*resource", handler)
 	router.GET("/user/:user/resource/*resource", handler)
+	router.GET("/health", healthController)
 
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }

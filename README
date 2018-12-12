@@ -1,5 +1,5 @@
 https://github.com/kardianos/govendor
-gin run imgserver.go
+gin run
 export PATH=$PATH:/usr/local/go/bin
 export PATH=$PATH:~/go/bin/
 http://localhost:3000/user/ismajl/resource/nature.jpeg/modifiers/resizew120h120
