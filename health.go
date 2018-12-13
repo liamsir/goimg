@@ -1,9 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"math"
+	"net/http"
 	"runtime"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 var start = time.Now()
@@ -16,6 +20,13 @@ type HealthStats struct {
 	TotalAllocatedMemory float64 `json:"totalAllocatedMemory"`
 	Goroutines           int     `json:"goroutines"`
 	NumberOfCPUs         int     `json:"cpus"`
+}
+
+func health(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	health := GetHealthStats()
+	body, _ := json.Marshal(health)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(body)
 }
 
 func GetHealthStats() *HealthStats {

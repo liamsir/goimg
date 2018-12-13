@@ -5,38 +5,55 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
-func fetchImage(urlStr string) ([]byte, error) {
+var MaxAllowedSize int = 15 * 1024 * 1000
 
+func checkRemoteImageSizeAndType(url string) ([]byte, error) {
+
+	AllowedMIME := map[string]bool{
+		"image/jpeg": true,
+		"image/jpg":  true,
+		"image/png":  true,
+	}
+
+	fmt.Println("remote url", url)
+	req, err := http.NewRequest("HEAD", url, nil)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error fetching image http headers: %v", err)
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("Error fetching image http headers: %v", err)
+	}
+	res.Body.Close()
+	if res.StatusCode < 200 && res.StatusCode > 206 {
+		return nil, fmt.Errorf("Error fetching image http headers: (status=%d) (url=%s)", res.StatusCode, req.URL.String())
+	}
+	contentLength, _ := strconv.Atoi(res.Header.Get("Content-Length"))
+	fmt.Printf("content length: %d \n", contentLength)
+	if contentLength > MaxAllowedSize {
+		return nil, fmt.Errorf("Content-Length %d exceeds maximum allowed %d bytes", contentLength, MaxAllowedSize)
+	}
+	contentType := res.Header.Get("Content-Type")
+	if _, ok := AllowedMIME[contentType]; !ok {
+		return nil, fmt.Errorf("Content-Type not allowed")
+	}
+	return nil, nil
+}
+
+func fetchImage(urlStr string) ([]byte, error) {
+	_, err := checkRemoteImageSizeAndType(urlStr)
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing url: %v", err)
+	}
 	url, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing url: %v", err)
 	}
-	// Check remote image size by fetching HTTP Headers
-	// MaxAllowedSize := 5 * 1024 * 1000
-	// if MaxAllowedSize > 0 {
-	// 	var ireq *http.Request
-	// 	req := newHTTPRequest(ireq, "HEAD", url)
-	// 	res, err := http.DefaultClient.Do(req)
-	//
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("Error fetching image http headers: %v", err)
-	// 	}
-	//
-	// 	res.Body.Close()
-	//
-	// 	if res.StatusCode < 200 && res.StatusCode > 206 {
-	// 		return nil, fmt.Errorf("Error fetching image http headers: (status=%d) (url=%s)", res.StatusCode, req.URL.String())
-	// 	}
-	//
-	// 	contentLength, _ := strconv.Atoi(res.Header.Get("Content-Length"))
-	//
-	// 	if contentLength > MaxAllowedSize {
-	// 		return nil, fmt.Errorf("Content-Length %d exceeds maximum allowed %d bytes", contentLength, MaxAllowedSize)
-	// 	}
-	// }
-
 	// Perform the request using the default client
 	req, _ := http.NewRequest("GET", url.String(), nil)
 	req.Header.Set("User-Agent", "imgserver/1.0.0")
@@ -55,6 +72,11 @@ func fetchImage(urlStr string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Unable to create image from response body: %s (url=%s)", req.URL.String(), err)
 	}
+
+	if len(buf) > MaxAllowedSize {
+		return nil, fmt.Errorf("Content-Length %d exceeds maximum allowed %d bytes", len(buf), MaxAllowedSize)
+	}
+
 	return buf, nil
 }
 

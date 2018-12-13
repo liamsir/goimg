@@ -53,6 +53,8 @@ type downloadAndSaveObjectParams struct {
 
 func downloadResourceAndSaveInBlob(params downloadAndSaveObjectParams) (string, error) {
 
+	// validate mime types and size
+
 	buf, err := fetchImage(params.ResourceUrl)
 
 	if err != nil {
@@ -65,10 +67,12 @@ func downloadResourceAndSaveInBlob(params downloadAndSaveObjectParams) (string, 
 		Name:     params.ResourceUrl,
 	})
 	if err != nil {
+		fmt.Println("error happend")
+		fmt.Printf("length %d \n", len(buf))
 		return "", fmt.Errorf("Error.")
 	}
 
-	fileObject := fileObject{
+	var fileObject = fileObject{
 		Body: buf,
 		Name: fmt.Sprintf("%d/%s", newFile.UserId, newFile.Hash),
 	}

@@ -11,6 +11,12 @@ func writeFileToResponseWriter(buf []byte, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Write(buf)
 }
+func writeError(w http.ResponseWriter) {
+	buf := []byte{}
+	w.Header().Set("Content-Length", strconv.Itoa(len(buf)))
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Write(buf)
+}
 
 func fetchImageAndWriteToResponse(url string, w http.ResponseWriter) {
 	buf, err := fetchImage(url)
