@@ -123,6 +123,12 @@
 			"revisionTime": "2018-02-21T19:10:11Z"
 		},
 		{
+			"checksumSHA1": "HiK8dVEr2ZRCb49HK1seH3u6ojM=",
+			"path": "github.com/rs/cors",
+			"revision": "a3460e445dd310dbefee993fe449f2ff9c08ae71",
+			"revisionTime": "2018-10-11T18:27:59Z"
+		},
+		{
 			"checksumSHA1": "C9EIZQEMR5q5zVZCo1OtPWSV39I=",
 			"path": "go.opencensus.io",
 			"revision": "8b019f31bc1c8ea10debf1f91ae4ce3276fca09f",
