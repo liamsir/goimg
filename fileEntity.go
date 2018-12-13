@@ -129,3 +129,31 @@ func saveFileEntity(newFile fileEntity) (fileEntity, error) {
 	db.Close()
 	return newFile, nil
 }
+
+type domainEntity struct {
+	Id     int
+	Domain string
+}
+
+func getAllowedDomains(userName string, checkType int32) map[string]bool {
+
+	db, err := sql.Open("postgres", connectionString)
+	rows, err := db.Query(`select id, domain from "domain" where type = $2 and user_id = (select id from "user" where username = $1)`,
+		userName, checkType)
+	if err, ok := err.(*pq.Error); ok {
+		fmt.Println("pq error:", err.Code.Name())
+	}
+	res := make(map[string]bool)
+	for rows.Next() {
+		var (
+			userDomain domainEntity
+		)
+		err = rows.Scan(&userDomain.Id, &userDomain.Domain)
+		if err != nil {
+			log.Fatal(err)
+		}
+		res[userDomain.Domain] = true
+	}
+	db.Close()
+	return res
+}

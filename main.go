@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/rs/cors"
 )
 
 func main() {
@@ -24,10 +23,5 @@ func main() {
 	router.GET("/user/:user/resource/*resource", index)
 	router.GET("/healthz", health)
 
-	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"https://goo.gl"},
-	})
-
-	handler := c.Handler(router)
-	log.Fatal(http.ListenAndServe(":"+port, handler))
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }

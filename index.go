@@ -16,10 +16,23 @@ func extractResourceFromRequestURI(r string) string {
 	}
 	return ""
 }
+
 func index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
 	paramUser := ps.ByName("user")
 	paramModifiers := ps.ByName("modifiers")
 	paramResource := extractResourceFromRequestURI(r.RequestURI) //ps.ByName("resource")[1:]
+
+	//validate origin
+	errOrigin := checkOrigin(checkOriginParams{
+		UserName: paramUser,
+		Request:  r,
+	})
+
+	if errOrigin != nil {
+		writeError(w)
+		return
+	}
 
 	resource := getResourceInfo(getFileParams{
 		userName:  paramUser,
@@ -69,6 +82,16 @@ func index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			If it's url, then try to download the resource and save in
 			blob storage and in db
 		*/
+		errRemoteOrigin := checkRemoteOrigin(checkRemoteOriginParams{
+			UserName: paramUser,
+			UrlStr:   paramResource,
+		})
+
+		if errRemoteOrigin != nil {
+			writeError(w)
+			return
+		}
+
 		_, err := url.ParseRequestURI(paramResource)
 		if err != nil {
 			return

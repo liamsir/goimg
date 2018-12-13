@@ -64,7 +64,7 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 			return false, err
 		}
 		resourceHash := hash(params.resource)
-		fileObject := fileObject{
+		var fileObject = fileObject{
 			Body: sendBuf,
 			Name: fmt.Sprintf("%d/%d_/%s", newFile.UserId, resourceHash, newFile.Hash),
 		}
