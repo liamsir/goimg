@@ -51,14 +51,17 @@ type downloadAndSaveObjectParams struct {
 	UserName    string
 }
 
-func downloadResourceAndSaveInBlob(params downloadAndSaveObjectParams) (string, error) {
+func downloadResourceAndSaveInBlob(params downloadAndSaveObjectParams, usageStats map[int]int) (fileEntity, error) {
 
 	// validate mime types and size
-
+	_, err := checkLimit(downloadSaveResourceInBlob, usageStats)
+	if err != nil {
+		return fileEntity{}, fmt.Errorf("Error.")
+	}
 	buf, err := fetchImage(params.ResourceUrl)
 
 	if err != nil {
-		return "", fmt.Errorf("Error.")
+		return fileEntity{}, fmt.Errorf("Error.")
 	}
 
 	newFile, err := saveFileEntity(fileEntity{
@@ -69,7 +72,7 @@ func downloadResourceAndSaveInBlob(params downloadAndSaveObjectParams) (string, 
 	if err != nil {
 		fmt.Println("error happend")
 		fmt.Printf("length %d \n", len(buf))
-		return "", fmt.Errorf("Error.")
+		return fileEntity{}, fmt.Errorf("Error.")
 	}
 
 	var fileObject = fileObject{
@@ -83,5 +86,14 @@ func downloadResourceAndSaveInBlob(params downloadAndSaveObjectParams) (string, 
 			storageBucketUrl,
 			fmt.Sprintf("%d/%s", newFile.UserId, newFile.Hash),
 		)
-	return remoteResource, nil
+	newFile.ResourceURL = remoteResource
+
+	logRequest(requestEntity{
+		Body:   "",
+		FileId: newFile.Id,
+		UserId: newFile.UserId,
+		Type:   2,
+	})
+
+	return newFile, nil
 }

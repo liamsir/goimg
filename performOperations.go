@@ -18,8 +18,11 @@ type performOperationsParam struct {
 	resource       string
 }
 
-func performOperationsAndWriteImageToRequest(params performOperationsParam, w http.ResponseWriter) (bool, error) {
-
+func performOperationsAndWriteImageToRequest(params performOperationsParam, w http.ResponseWriter, usageStats map[int]int) (bool, error) {
+	_, err := checkLimit(performOperations, usageStats)
+	if err != nil {
+		return false, fmt.Errorf("Error.")
+	}
 	buf, err := fetchImage(params.resourceUrl)
 
 	if err != nil {

@@ -39,20 +39,39 @@ func index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		modifiers: paramModifiers,
 		resource:  paramResource,
 	})
+
+	usageStats := getUsage(paramUser)
+
 	fmt.Println("getResourceInfo0 ", resource[0].Id)
 	fmt.Println("getResourceInfo1 ", resource[1].Id)
 
 	// 1. Serve image from cache
-	servedFromCache, e := serveImageFromCache(resource, w)
+	servedFromCache, e := serveImageFromCache(resource, w, usageStats)
 
-	if e != nil || servedFromCache {
+	if e != nil {
+		return
+	}
+
+	if servedFromCache {
+		logRequest(requestEntity{
+			Body:   "",
+			FileId: resource[1].Id,
+			UserId: resource[1].UserId,
+			Type:   0,
+		})
 		fmt.Println("Served from cache.")
 		return
 	}
 
 	if paramModifiers == "" {
-		servedOriginalImage, e := serveOriginalImage(resource, w)
+		servedOriginalImage, e := serveOriginalImage(resource, w, usageStats)
 		if e != nil || servedOriginalImage {
+			logRequest(requestEntity{
+				Body:   "",
+				FileId: resource[0].Id,
+				UserId: resource[0].UserId,
+				Type:   1,
+			})
 			fmt.Println("Served original image.")
 			return
 		}
@@ -60,7 +79,8 @@ func index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	fmt.Println("Beginning to perform image transformation...")
 	var originalResourceUrl string
-
+	var userId int
+	var fileId int
 	if originalResource, ok := resource[0]; ok {
 		// 2. Check if user has permission to perform operations
 		if operationsAllowed(originalResource.AllowedOperations, paramModifiers) {
@@ -70,6 +90,8 @@ func index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 					originalResource.UserId,
 					originalResource.Hash,
 				)
+			userId = originalResource.UserId
+			fileId = originalResource.Id
 		} else {
 			fmt.Println("Operation is not allowed.")
 			return
@@ -96,13 +118,18 @@ func index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		if err != nil {
 			return
 		}
+
 		fmt.Println("Downloading remote resource and storing...")
-		originalResourceUrl, err = downloadResourceAndSaveInBlob(
+		newFile, err := downloadResourceAndSaveInBlob(
 			downloadAndSaveObjectParams{
 				ResourceUrl: paramResource,
 				UserName:    paramUser,
 			},
+			usageStats,
 		)
+		userId = newFile.UserId
+		fileId = newFile.Id
+		originalResourceUrl = newFile.ResourceURL
 		fmt.Println("remote resource ", originalResourceUrl)
 		if err != nil {
 			fmt.Println("failed to fetch remote resource", originalResourceUrl)
@@ -118,7 +145,13 @@ func index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			paramModifiers: paramModifiers,
 			userName:       paramUser,
 			resource:       paramResource,
-		}, w)
+		}, w, usageStats)
+	logRequest(requestEntity{
+		Body:   paramModifiers,
+		FileId: fileId,
+		UserId: userId,
+		Type:   3,
+	})
 	fmt.Println("end of performing operations")
 	if err != nil {
 		fmt.Println("failed to perform operations")

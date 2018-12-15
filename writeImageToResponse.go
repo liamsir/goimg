@@ -26,11 +26,15 @@ func fetchImageAndWriteToResponse(url string, w http.ResponseWriter) {
 	writeFileToResponseWriter(buf, w)
 }
 
-func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter) (bool, error) {
+func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter, usageStats map[int]int) (bool, error) {
 
 	if cachedResource, ok := resource[1]; ok {
 		originalResource, ok := resource[0]
 		if !ok {
+			return false, fmt.Errorf("Error.")
+		}
+		_, err := checkLimit(servedFromCache, usageStats)
+		if err != nil {
 			return false, fmt.Errorf("Error.")
 		}
 		cachedUrl := fmt.Sprintf("%s/%d/%s_/%s",
@@ -46,9 +50,13 @@ func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter) (
 	return false, nil
 }
 
-func serveOriginalImage(resource map[int32]fileEntity, w http.ResponseWriter) (bool, error) {
+func serveOriginalImage(resource map[int32]fileEntity, w http.ResponseWriter, usageStats map[int]int) (bool, error) {
 	originalResource, ok := resource[0]
 	if !ok {
+		return false, fmt.Errorf("Error.")
+	}
+	_, err := checkLimit(servedOriginalImage, usageStats)
+	if err != nil {
 		return false, fmt.Errorf("Error.")
 	}
 	originalResourceUrl := fmt.Sprintf("%s/%d/%s",

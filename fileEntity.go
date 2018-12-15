@@ -19,6 +19,7 @@ type fileEntity struct {
 	PerformedOperations string
 	UserName            string
 	GUID                string
+	ResourceURL         string
 }
 
 type getFileParams struct {
