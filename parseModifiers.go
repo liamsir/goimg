@@ -8,7 +8,7 @@ import (
 
 func parseModifiers(modifiers string) ([]imageOperation, error) {
 	allowedOperations := map[string]bool{"resize": true, "crop": true}
-	var MAX_ALLOWED_OPERATIONS_PER_REQUEST = 3
+	const MAX_ALLOWED_OPERATIONS_PER_REQUEST = 3
 	modifiersList := []imageOperation{}
 
 	operations := strings.Split(modifiers, "&")

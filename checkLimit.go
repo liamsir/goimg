@@ -36,7 +36,7 @@ func checkLimit(operationType int, stats map[int]int) (bool, error) {
 		servedFromCache:            150 * 1000,
 		servedOriginalImage:        150 * 1000,
 		downloadSaveResourceInBlob: 150 * 1000,
-		operationType:              150 * 1000,
+		performOperations:          150 * 1000,
 	}
 	if limit, ok := limits[operationType]; ok {
 		if usage, ok := stats[operationType]; ok {
@@ -46,6 +46,8 @@ func checkLimit(operationType int, stats map[int]int) (bool, error) {
 			}
 			return true, nil
 		}
+		return true, nil
 	}
+
 	return false, fmt.Errorf("Error.")
 }

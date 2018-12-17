@@ -139,6 +139,9 @@ type domainEntity struct {
 func getAllowedDomains(userName string, checkType int32) map[string]bool {
 
 	db, err := sql.Open("postgres", connectionString)
+	if err != nil {
+		fmt.Println("Failed to open a connection!")
+	}
 	rows, err := db.Query(`select id, domain from "domain" where type = $2 and user_id = (select id from "user" where username = $1)`,
 		userName, checkType)
 	if err, ok := err.(*pq.Error); ok {
