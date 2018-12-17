@@ -4,7 +4,7 @@ import (
 	"database/sql"
 )
 
-const ( // iota is reset to 0
+const (
 	servedFromCache            = 0
 	servedOriginalImage        = 1
 	downloadSaveResourceInBlob = 2

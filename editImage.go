@@ -12,18 +12,29 @@ import (
 	"github.com/oliamb/cutter"
 )
 
-type performOperationsParam struct {
+type performOperationsParamTest struct {
 	paramModifiers string
 	resourceUrl    string
 	userName       string
 	resource       string
 }
 
-func performOperationsAndWriteImageToRequest(params performOperationsParam, w http.ResponseWriter, usageStats map[int]int) (bool, error) {
-	_, err := checkLimit(performOperations, usageStats)
-	if err != nil {
-		return false, fmt.Errorf("Error.")
-	}
+/*
+Resize
+Parameters
+Size
+Width and height to set the image to.
+Large 1920 1920
+Medium 500 500
+Thumb 150 150
+*/
+type imageOperation struct {
+	name  string
+	value map[string]int
+}
+
+func editImage(params performOperationsParam, w http.ResponseWriter, usageStats map[int]int) (bool, error) {
+
 	buf, err := fetchImage(params.resourceUrl)
 
 	if err != nil {
@@ -45,8 +56,6 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 	}
 	fmt.Println(modifiers)
 	if len(modifiers) > 0 {
-		// 5. Perform transformations, and save transformed image to blob and db
-
 		for i := 0; i < len(modifiers); i += 1 {
 			modifier := modifiers[i]
 			fmt.Println(modifier)
@@ -69,28 +78,15 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 			}
 		}
 
+		if err != nil {
+			return false, err
+		}
+		//newImage := resize.Thumbnail(100, 1, img, resize.Lanczos3)
 		bufOut := new(bytes.Buffer)
 		err = jpeg.Encode(bufOut, img, nil)
 		sendBuf := bufOut.Bytes()
 		fmt.Println("length of sendBuf", len(sendBuf))
-		//save metadata in db
-		newFile, err := saveFileEntity(fileEntity{
-			Type:                1,
-			UserName:            params.userName,
-			Name:                params.resource,
-			PerformedOperations: params.paramModifiers,
-		})
 
-		if err != nil {
-			fmt.Println("failed to save file entity", err.Error())
-			return false, err
-		}
-		resourceHash := hash(params.resource)
-		var fileObject = fileObject{
-			Body: sendBuf,
-			Name: fmt.Sprintf("%d/%d_/%s", newFile.UserId, resourceHash, newFile.Hash),
-		}
-		saveObject(fileObject)
 		// 6. Return edited image
 		w.Header().Set("Content-Length", strconv.Itoa(len(sendBuf)))
 		w.Header().Set("Content-Type", "image/jpeg")

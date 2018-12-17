@@ -123,6 +123,12 @@
 			"revisionTime": "2018-02-21T19:10:11Z"
 		},
 		{
+			"checksumSHA1": "gFTJ6KWHio+aQX05gGARpgycxbc=",
+			"path": "github.com/oliamb/cutter",
+			"revision": "8d58efb5046ae961797a076be851b73182558d05",
+			"revisionTime": "2018-05-29T22:05:55Z"
+		},
+		{
 			"checksumSHA1": "HiK8dVEr2ZRCb49HK1seH3u6ojM=",
 			"path": "github.com/rs/cors",
 			"revision": "a3460e445dd310dbefee993fe449f2ff9c08ae71",
