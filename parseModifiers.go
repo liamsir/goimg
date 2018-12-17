@@ -8,7 +8,7 @@ import (
 
 func parseModifiers(modifiers string) ([]imageOperation, error) {
 	allowedOperations := map[string]bool{"resize": true, "crop": true}
-	var MAX_ALLOWED_OPERATIONS_PER_REQUEST = 2
+	var MAX_ALLOWED_OPERATIONS_PER_REQUEST = 3
 	modifiersList := []imageOperation{}
 
 	operations := strings.Split(modifiers, "&")
@@ -31,7 +31,7 @@ func parseModifiers(modifiers string) ([]imageOperation, error) {
 			newOperation.name = operationName
 
 			if operationName == "resize" {
-				if len(operation) <= 4 {
+				if len(operation) == 3 || len(operation) == 4 {
 					width, e := strconv.ParseUint(strings.Replace(operation[1], "w", "", -1), 10, 32)
 					height, e := strconv.ParseUint(strings.Replace(operation[2], "h", "", -1), 10, 32)
 					var resizeMode = 0
