@@ -19,6 +19,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+//const serverUrl = "http://localhost:3000"
+const serverUrl = "https://imgserver-testing.herokuapp.com"
+
 var CreateFile = func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	user := r.Context().Value("user").(uint) //Grab the id of the user that send the request
 	file := &models.File{}
@@ -89,7 +92,6 @@ var UploadImage = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	imageserver.SaveObject(fileObject)
 	// return image url
 
-	const serverUrl = "http://localhost:3000"
 	imageUrl := fmt.Sprintf("%s/user/%s/resource/%s",
 		serverUrl,
 		userName,
@@ -220,7 +222,8 @@ var SignUrl = func(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 	fmt.Println(user)
 	var data = make(map[string]interface{})
-	data["uploadUrl"] = fmt.Sprintf("http://localhost:3000/user/%s/upload/%s/file/%s",
+	data["uploadUrl"] = fmt.Sprintf("%s/user/%s/upload/%s/file/%s",
+		serverUrl,
 		user.Username,
 		signData,
 		signUrl.Image.Name)
