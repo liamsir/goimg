@@ -1,6 +1,9 @@
 package main
 
 import (
+	"imgserver/api/app"
+	"imgserver/api/controllers"
+	"imgserver/imageserver"
 	"log"
 	"net/http"
 	"os"
@@ -9,7 +12,6 @@ import (
 )
 
 func main() {
-
 	port := os.Getenv("PORT")
 
 	if port == "" {
@@ -19,9 +21,20 @@ func main() {
 
 	router := httprouter.New()
 
-	router.GET("/user/:user/modifiers/:modifiers/resource/*resource", index)
-	router.GET("/user/:user/resource/*resource", index)
-	router.GET("/healthz", health)
+	router.GET("/user/:user/modifiers/:modifiers/resource/*resource", imageserver.Index)
+	router.GET("/user/:user/resource/*resource", imageserver.Index)
+	router.GET("/healthz", imageserver.Health)
 
-	log.Fatal(http.ListenAndServe(":"+port, router))
+	router.POST("/api/user/new", controllers.CreateAccount)
+	router.POST("/api/user/login", controllers.Authenticate)
+
+	router.POST("/api/file/new", controllers.CreateFile)
+	router.GET("/api/user/:id/files", controllers.GetFilesFor)
+
+	router.POST("/user/:user/upload/:signature/file/:fileName", controllers.UploadImage)
+	router.POST("/user/:user/signUrl", controllers.SignUrl)
+
+	m := app.JwtAuthentication(router)
+	log.Fatal(http.ListenAndServe(":"+port, m))
+
 }
