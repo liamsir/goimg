@@ -13,6 +13,7 @@ var connectionString string = "postgres://jxbnzxtecqvcsv:9f603a3b7a60b5583f668fa
 func init() {
 
 	conn, err := gorm.Open("postgres", connectionString)
+	conn.DB().SetMaxOpenConns(2)
 	if err != nil {
 		fmt.Print(err)
 	}
