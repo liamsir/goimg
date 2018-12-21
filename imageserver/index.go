@@ -46,19 +46,13 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	fmt.Println("getResourceInfo1 ", resource[1].Id)
 
 	// 1. Serve image from cache
-	servedFromCache, e := serveImageFromCache(resource, w, usageStats)
+	servedFromCache, e := serveImageFromCache(resource, w, r, usageStats)
 
 	if e != nil {
 		return
 	}
 
 	if servedFromCache {
-		logRequest(requestEntity{
-			Body:   "",
-			FileId: resource[1].Id,
-			UserId: resource[1].UserId,
-			Type:   0,
-		})
 		fmt.Println("Served from cache.")
 		return
 	}

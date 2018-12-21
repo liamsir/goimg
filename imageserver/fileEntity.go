@@ -58,7 +58,7 @@ func getResourceInfo(params getFileParams) map[int32]fileEntity {
 		}
 		res[file.Type] = file
 	}
-	db.Close()
+	defer db.Close()
 	return res
 }
 
@@ -108,7 +108,7 @@ func saveFileEntity(newFile fileEntity) (fileEntity, error) {
 
 	newFile.Id = newFileId
 	newFile.UserId = newFileUserId
-	db.Close()
+	defer db.Close()
 	return newFile, nil
 }
 
@@ -139,6 +139,6 @@ func getAllowedDomains(userName string, checkType int32) map[string]bool {
 		}
 		res[userDomain.Domain] = true
 	}
-	db.Close()
+	defer db.Close()
 	return res
 }

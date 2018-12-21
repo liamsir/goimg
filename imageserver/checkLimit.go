@@ -27,7 +27,7 @@ func getUsage(userName string) map[int]int {
 		}
 		res[requestType] = requestCount
 	}
-	db.Close()
+	defer db.Close()
 	return res
 }
 

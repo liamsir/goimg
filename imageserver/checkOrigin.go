@@ -13,8 +13,8 @@ type checkOriginParams struct {
 
 func checkOrigin(params checkOriginParams) error {
 	allowedDomains := getAllowedDomains(params.UserName, 0)
-	fmt.Println(allowedDomains)
-	if params.Request.Referer() == "" {
+
+	if params.Request.Referer() == "" || len(allowedDomains) == 0 {
 		return nil
 	}
 	u, err := url.Parse(params.Request.Referer())

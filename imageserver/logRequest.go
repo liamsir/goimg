@@ -27,7 +27,7 @@ type requestEntity struct {
 func logRequest(requestInfo requestEntity) (requestEntity, error) {
 
 	sqlStatement := `INSERT INTO public.logs (created_at, user_id, file_id, body, "type")
-  VALUES(now(), $1 , $2, $3, $4);`
+  VALUES(now(), $1 , $2, $3, $4) RETURNING ID;`
 
 	db, err := sql.Open("postgres", connectionString)
 
@@ -45,9 +45,11 @@ func logRequest(requestInfo requestEntity) (requestEntity, error) {
 	).Scan(&newLogId)
 
 	if errIn != nil {
+		defer db.Close()
 		return requestEntity{}, errIn
 	}
 	requestInfo.Id = newLogId
-	db.Close()
+	defer db.Close()
+
 	return requestInfo, nil
 }

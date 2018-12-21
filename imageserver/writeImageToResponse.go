@@ -26,7 +26,7 @@ func fetchImageAndWriteToResponse(url string, w http.ResponseWriter) {
 	writeFileToResponseWriter(buf, w)
 }
 
-func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter, usageStats map[int]int) (bool, error) {
+func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter, r *http.Request, usageStats map[int]int) (bool, error) {
 
 	if cachedResource, ok := resource[1]; ok {
 		originalResource, ok := resource[0]
@@ -44,7 +44,16 @@ func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter, u
 			cachedResource.Hash,
 		)
 		fmt.Println("cachedUrl", cachedUrl)
-		fetchImageAndWriteToResponse(cachedUrl, w)
+
+		logRequest(requestEntity{
+			Body:   "",
+			FileId: resource[1].Id,
+			UserId: resource[1].UserId,
+			Type:   0,
+		})
+
+		//fetchImageAndWriteToResponse(cachedUrl, w)
+		http.Redirect(w, r, cachedUrl, http.StatusTemporaryRedirect)
 		return true, nil
 	}
 	return false, nil
