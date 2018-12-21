@@ -39,10 +39,10 @@ func SaveObject(object FileObject) {
 		panic(err)
 	}
 
-	acl := obj.ACL()
-	if err := acl.Set(ctx, storage.AllUsers, storage.RoleReader); err != nil {
-		panic(err)
-	}
+	// acl := obj.ACL()
+	// if err := acl.Set(ctx, storage.AllUsers, storage.RoleReader); err != nil {
+	// 	panic(err)
+	// }
 	fmt.Println("done writing file")
 }
 
