@@ -49,7 +49,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	paramResource := extractResourceFromRequestURI(r.RequestURI) //ps.ByName("resource")[1:]
 
 	//validate origin
-	errOrigin := checkOrigin(checkOriginParams{
+	errOrigin := CheckOrigin(CheckOriginParams{
 		UserName: paramUser,
 		Request:  r,
 	})

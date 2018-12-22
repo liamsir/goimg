@@ -11,9 +11,11 @@ import (
 	u "imgserver/api/utils"
 	"imgserver/imageserver"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
@@ -53,11 +55,24 @@ var GetFilesFor = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 }
 
 var UploadImage = func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
 	signature := ps.ByName("signature")
 	fileName := ps.ByName("fileName")
 	userName := ps.ByName("user")
+	expires := ps.ByName("expires")
+
+	//validate origin
+	errOrigin := imageserver.CheckOrigin(imageserver.CheckOriginParams{
+		UserName: userName,
+		Request:  r,
+	})
+
+	if errOrigin != nil {
+		return
+	}
 
 	res, err := GetImage(r)
+
 	if err != nil {
 		u.Respond(w, u.Message(false, "There was an error in your request"))
 		return
@@ -74,9 +89,21 @@ var UploadImage = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		FileName:  fileName,
 		Image:     res,
 		Username:  userName,
+		Expires:   expires,
 	})
 	if errValidating != nil {
 		u.Respond(w, u.Message(false, "There was an error in your request while validating signature."))
+		return
+	}
+
+	i, err := strconv.ParseInt(expires, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	tm := time.Unix(i, 0)
+
+	if tm.Before(time.Now()) {
+		u.Respond(w, u.Message(false, fmt.Sprintf("ExpiredToken The provided token has expired.Request signature expired at:%s", tm.String())))
 		return
 	}
 	//return uploaded image url
@@ -141,23 +168,51 @@ func readRawBody(r *http.Request) ([]byte, error) {
 	return ioutil.ReadAll(r.Body)
 }
 func readFormBody(r *http.Request) ([]byte, error) {
-	err := r.ParseMultipartForm(maxMemory)
-	if err != nil {
+	var (
+		err error
+	)
+	if err = r.ParseMultipartForm(32 << 20); nil != err {
 		return nil, err
 	}
-
-	file, _, err := r.FormFile("file")
-	if err != nil {
-		return nil, err
+	if len(r.MultipartForm.File) > 1 {
+		return nil, fmt.Errorf("format")
 	}
-	defer file.Close()
+	for _, fheaders := range r.MultipartForm.File {
+		for _, hdr := range fheaders {
+			var infile multipart.File
+			if infile, err = hdr.Open(); nil != err {
+				return nil, err
+			}
+			defer infile.Close()
+			buf, _ := ioutil.ReadAll(infile)
 
-	buf, err := ioutil.ReadAll(file)
-	if len(buf) == 0 {
-		err = fmt.Errorf("Error")
+			if len(buf) == 0 {
+				err = fmt.Errorf("Error")
+			}
+
+			return buf, err
+		}
 	}
 
-	return buf, err
+	return nil, fmt.Errorf("format")
+
+	// err := r.ParseMultipartForm(maxMemory)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	//
+	// file, _, err := r.FormFile("file")
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer file.Close()
+	//
+	// buf, err := ioutil.ReadAll(file)
+	// if len(buf) == 0 {
+	// 	err = fmt.Errorf("Error")
+	// }
+	//
+	// return buf, err
 }
 
 type ValidateSignatureParams struct {
@@ -166,6 +221,7 @@ type ValidateSignatureParams struct {
 	Username  string
 	FileName  string
 	Image     []byte
+	Expires   string
 }
 
 func validateSignature(params ValidateSignatureParams) (bool, error) {
@@ -177,6 +233,7 @@ func validateSignature(params ValidateSignatureParams) (bool, error) {
 	h.Write([]byte(params.FileName))
 	h.Write([]byte(mimeType))
 	h.Write([]byte(fmt.Sprintf("%d", len(params.Image))))
+	h.Write([]byte(params.Expires))
 
 	expectedSign := h.Sum(nil)
 	urlSign, err := base64.RawURLEncoding.DecodeString(params.Signature)
@@ -206,8 +263,9 @@ var SignUrl = func(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		u.Respond(w, resp)
 		return
 	}
+	expires := time.Now().Add(time.Second * 60).Unix()
 
-	signData, err := signUrlHelper(signUrl)
+	signData, err := signUrlHelper(signUrl, expires)
 
 	if err != nil {
 		u.Respond(w, u.Message(false, "Error while decoding request body"))
@@ -222,23 +280,28 @@ var SignUrl = func(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 	fmt.Println(user)
 	var data = make(map[string]interface{})
-	data["uploadUrl"] = fmt.Sprintf("%s/user/%s/upload/%s/file/%s",
+
+	data["uploadUrl"] = fmt.Sprintf("%s/user/%s/upload/%s/expires/%d/file/%s",
 		serverUrl,
 		user.Username,
 		signData,
-		signUrl.Image.Name)
+		expires,
+		signUrl.Image.Name,
+	)
 
 	resp := u.Message(true, "success")
 	resp["data"] = data
 	u.Respond(w, resp)
 }
 
-func signUrlHelper(signUrl *models.SignUrlViewModel) (string, error) {
+func signUrlHelper(signUrl *models.SignUrlViewModel, expires int64) (string, error) {
+
 	h := hmac.New(sha256.New, []byte(signUrl.SecretKey))
 	h.Write([]byte(signUrl.UserName))
 	h.Write([]byte(signUrl.Image.Name))
 	h.Write([]byte(signUrl.Image.ContentType))
 	h.Write([]byte(fmt.Sprintf("%d", signUrl.Image.ContentLength)))
+	h.Write([]byte(fmt.Sprintf("%d", expires)))
 	buf := h.Sum(nil)
 	signature := base64.RawURLEncoding.EncodeToString(buf)
 	return signature, nil

@@ -6,12 +6,12 @@ import (
 	"net/url"
 )
 
-type checkOriginParams struct {
+type CheckOriginParams struct {
 	UserName string
 	Request  *http.Request
 }
 
-func checkOrigin(params checkOriginParams) error {
+func CheckOrigin(params CheckOriginParams) error {
 	allowedDomains := getAllowedDomains(params.UserName, 0)
 
 	if params.Request.Referer() == "" || len(allowedDomains) == 0 {

@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+
 	port := os.Getenv("PORT")
 
 	if port == "" {
@@ -31,7 +32,10 @@ func main() {
 	router.POST("/api/file/new", controllers.CreateFile)
 	router.GET("/api/user/:id/files", controllers.GetFilesFor)
 
-	router.POST("/user/:user/upload/:signature/file/:fileName", controllers.UploadImage)
+	const uploadImageRoute = "/user/:user/upload/:signature/expires/:expires/file/:fileName"
+	router.POST(uploadImageRoute, controllers.UploadImage)
+	router.PUT(uploadImageRoute, controllers.UploadImage)
+
 	router.POST("/user/:user/signUrl", controllers.SignUrl)
 
 	m := app.JwtAuthentication(router)

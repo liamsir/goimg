@@ -1,35 +1,8 @@
 package imageserver
 
 import (
-	"database/sql"
 	"fmt"
-	"log"
-
-	"github.com/lib/pq"
 )
-
-func getUsage(userName string) map[int]int {
-	db, err := sql.Open("postgres", connectionString)
-	rows, err := db.Query(`select "type", count(Id) from logs where user_id = (select id from "users" where username = $1) group by "type"`,
-		userName)
-	if err, ok := err.(*pq.Error); ok {
-		fmt.Println("pq error:", err.Code.Name())
-	}
-	res := make(map[int]int)
-	for rows.Next() {
-		var (
-			requestType  int
-			requestCount int
-		)
-		err = rows.Scan(&requestType, &requestCount)
-		if err != nil {
-			log.Fatal(err)
-		}
-		res[requestType] = requestCount
-	}
-	defer db.Close()
-	return res
-}
 
 func checkLimit(operationType int, stats map[int]int) (bool, error) {
 	limits := map[int]int{
