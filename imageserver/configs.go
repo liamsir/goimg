@@ -4,3 +4,4 @@ var connectionString string = "postgres://jxbnzxtecqvcsv:9f603a3b7a60b5583f668fa
 
 // var connectionString string = "postgresql://rootgoimgserver:9f603a3b7a60b5583f66@goimgserver.cglo5epcd2hd.us-east-2.rds.amazonaws.com:5432/goimgserver"
 var storageBucketUrl string = "https://storage.googleapis.com/imgmdf"
+var storageBucketName string = "imgmdf"

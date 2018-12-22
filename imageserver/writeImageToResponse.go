@@ -44,7 +44,7 @@ func fetchImageAndWriteToResponse(url string, w http.ResponseWriter) {
 	writeFileToResponseWriter(buf, w)
 }
 
-func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter, r *http.Request, usageStats map[int]int) (bool, error) {
+func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter, r *http.Request, usageStats map[int]int, debug bool) (bool, error) {
 
 	if cachedResource, ok := resource[1]; ok {
 		originalResource, ok := resource[0]
@@ -55,13 +55,6 @@ func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter, r
 		if err != nil {
 			return false, fmt.Errorf("Error.")
 		}
-		cachedUrl := fmt.Sprintf("%s/%d/%s_/%s",
-			storageBucketUrl,
-			cachedResource.UserId,
-			originalResource.Hash,
-			cachedResource.Hash,
-		)
-		fmt.Println("cachedUrl", cachedUrl)
 
 		logRequest(requestEntity{
 			Body:   "",
@@ -69,44 +62,27 @@ func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter, r
 			UserId: resource[1].UserId,
 			Type:   0,
 		})
-
-		// sign url
 		fileName := fmt.Sprintf("%d/%s_/%s",
 			cachedResource.UserId,
 			originalResource.Hash,
 			cachedResource.Hash,
 		)
-		expires := time.Now().Add(time.Second * 15)
-		bucketName := "imgmdf"
-		//googleAccessID := "image-server@upbeat-aspect-168013.iam.gserviceaccount.com "
-		//data, _ := ioutil.ReadFile(serviceAccountPEMFilename)
-
-		opts := storage.SignedURLOptions{
-			GoogleAccessID: config.ClientEmail,
-			PrivateKey:     ([]byte(config.PrivateKey)),
-			Method:         "GET",
-			Expires:        expires,
-		}
-		url, err := storage.SignedURL(bucketName, fileName, &opts)
+		url, err := signUrl(fileName)
 		if err != nil {
-			// TODO: Handle error.
-			fmt.Println(err)
+			return false, err
 		}
-		// fmt.Print("\n\n\n")
-		// fmt.Println("signed url ", url)
-		// fmt.Print("\n\n\n")
-		//return true, nil
+		if debug {
+			fetchImageAndWriteToResponse(url, w)
+		} else {
+			http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+		}
 
-		// end sign url
-
-		//fetchImageAndWriteToResponse(cachedUrl, w)
-		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 		return true, nil
 	}
 	return false, nil
 }
 
-func serveOriginalImage(resource map[int32]fileEntity, w http.ResponseWriter, usageStats map[int]int) (bool, error) {
+func serveOriginalImage(resource map[int32]fileEntity, w http.ResponseWriter, r *http.Request, usageStats map[int]int, debug bool) (bool, error) {
 	originalResource, ok := resource[0]
 	if !ok {
 		return false, fmt.Errorf("Error.")
@@ -115,13 +91,43 @@ func serveOriginalImage(resource map[int32]fileEntity, w http.ResponseWriter, us
 	if err != nil {
 		return false, fmt.Errorf("Error.")
 	}
-	originalResourceUrl := fmt.Sprintf("%s/%d/%s",
-		storageBucketUrl,
+	fileName := fmt.Sprintf("%d/%s",
 		originalResource.UserId,
 		originalResource.Hash,
 	)
-	fetchImageAndWriteToResponse(originalResourceUrl, w)
+	url, err := signUrl(fileName)
+	if err != nil {
+		return false, err
+	}
+	if debug {
+		fetchImageAndWriteToResponse(url, w)
+	} else {
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	}
+
 	return true, nil
+}
+
+type SignUrlParams struct {
+	UserId string
+	Hash   string
+}
+
+func signUrl(fileName string) (string, error) {
+
+	expires := time.Now().Add(time.Second * 15)
+
+	opts := storage.SignedURLOptions{
+		GoogleAccessID: config.ClientEmail,
+		PrivateKey:     ([]byte(config.PrivateKey)),
+		Method:         "GET",
+		Expires:        expires,
+	}
+	url, err := storage.SignedURL(storageBucketName, fileName, &opts)
+	if err != nil {
+		return "", err
+	}
+	return url, nil
 }
 
 type Config struct {

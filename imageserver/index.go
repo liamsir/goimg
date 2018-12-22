@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
@@ -12,12 +13,36 @@ import (
 func extractResourceFromRequestURI(r string) string {
 	uriSplited := strings.Split(r, "resource")
 	if len(uriSplited) > 0 {
-		return uriSplited[len(uriSplited)-1][1:]
+		uri := uriSplited[len(uriSplited)-1][1:]
+		uri = strings.Replace(uri, "?debug=true", "", 1)
+		return uri
 	}
 	return ""
 }
 
+func isInDebugMode(r *http.Request) (bool, error) {
+
+	if r.Referer() == "" {
+		return true, nil
+	}
+	keys, ok := r.URL.Query()["debug"]
+	if ok && len(keys[0]) > 0 {
+		debug, errParsing := strconv.ParseBool(keys[0])
+		if errParsing != nil {
+			return false, errParsing
+		}
+		return debug, nil
+	}
+	return false, nil
+}
+
 func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	debugMode, errParsing := isInDebugMode(r)
+	if errParsing != nil {
+		writeError(w)
+		return
+	}
 
 	paramUser := ps.ByName("user")
 	paramModifiers := ps.ByName("modifiers")
@@ -46,7 +71,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	fmt.Println("getResourceInfo1 ", resource[1].Id)
 
 	// 1. Serve image from cache
-	servedFromCache, e := serveImageFromCache(resource, w, r, usageStats)
+	servedFromCache, e := serveImageFromCache(resource, w, r, usageStats, debugMode)
 
 	if e != nil {
 		return
@@ -58,7 +83,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	if paramModifiers == "" {
-		servedOriginalImage, e := serveOriginalImage(resource, w, usageStats)
+		servedOriginalImage, e := serveOriginalImage(resource, w, r, usageStats, debugMode)
 		if e != nil || servedOriginalImage {
 			logRequest(requestEntity{
 				Body:   "",
@@ -75,6 +100,8 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var originalResourceUrl string
 	var userId int
 	var fileId int
+	var fileHash string
+
 	if originalResource, ok := resource[0]; ok {
 		// 2. Check if user has permission to perform operations
 		if operationsAllowed(originalResource.AllowedOperations, paramModifiers) {
@@ -86,6 +113,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 				)
 			userId = originalResource.UserId
 			fileId = originalResource.Id
+			fileHash = originalResource.Hash
 		} else {
 			fmt.Println("Operation is not allowed.")
 			return
@@ -123,6 +151,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		)
 		userId = newFile.UserId
 		fileId = newFile.Id
+		fileHash = newFile.Hash
 		originalResourceUrl = newFile.ResourceURL
 		fmt.Println("remote resource ", originalResourceUrl)
 		if err != nil {
@@ -139,6 +168,8 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			paramModifiers: paramModifiers,
 			userName:       paramUser,
 			resource:       paramResource,
+			userId:         userId,
+			resourceHash:   fileHash,
 		}, w, usageStats)
 	logRequest(requestEntity{
 		Body:   paramModifiers,

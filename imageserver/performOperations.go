@@ -17,6 +17,8 @@ type performOperationsParam struct {
 	resourceUrl    string
 	userName       string
 	resource       string
+	userId         int
+	resourceHash   string
 }
 
 func performOperationsAndWriteImageToRequest(params performOperationsParam, w http.ResponseWriter, usageStats map[int]int) (bool, error) {
@@ -24,7 +26,17 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 	if err != nil {
 		return false, fmt.Errorf("Error.")
 	}
-	buf, err := fetchImage(params.resourceUrl)
+
+	fileName := fmt.Sprintf("%d/%s",
+		params.userId,
+		params.resourceHash,
+	)
+	urlSigned, err := signUrl(fileName)
+	if err != nil {
+		return false, err
+	}
+	buf, err := fetchImage(urlSigned)
+	fmt.Println("buf length", len(buf))
 
 	if err != nil {
 		fmt.Println("failed to fetch image")
