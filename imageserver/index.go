@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
@@ -14,34 +13,16 @@ func extractResourceFromRequestURI(r string) string {
 	uriSplited := strings.Split(r, "resource")
 	if len(uriSplited) > 0 {
 		uri := uriSplited[len(uriSplited)-1][1:]
-		uri = strings.Replace(uri, "?debug=true", "", 1)
 		return uri
 	}
 	return ""
 }
 
-func isInDebugMode(r *http.Request) (bool, error) {
-
-	if r.Referer() == "" {
-		return true, nil
-	}
-	keys, ok := r.URL.Query()["debug"]
-	if ok && len(keys[0]) > 0 {
-		debug, errParsing := strconv.ParseBool(keys[0])
-		if errParsing != nil {
-			return false, errParsing
-		}
-		return debug, nil
-	}
-	return false, nil
-}
-
 func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	debugMode, errParsing := isInDebugMode(r)
-	if errParsing != nil {
-		writeError(w)
-		return
+	debugMode := false
+	if r.Referer() == "" {
+		debugMode = true
 	}
 
 	paramUser := ps.ByName("user")

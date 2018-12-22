@@ -1,8 +1,9 @@
 package imageserver
 
 import (
+	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -67,17 +68,24 @@ func fetchImage(urlStr string) ([]byte, error) {
 		return nil, fmt.Errorf("Error downloading image: (status=%d) (url=%s)", res.StatusCode, req.URL.String())
 	}
 
+	var data bytes.Buffer
+	_, err = io.Copy(&data, res.Body)
+	if err != nil {
+		return nil, err
+	}
+	//data.Reset()
+
 	// Read the body
-	buf, err := ioutil.ReadAll(res.Body)
+	//buf, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to create image from response body: %s (url=%s)", req.URL.String(), err)
 	}
 
-	if len(buf) > MaxAllowedSize {
-		return nil, fmt.Errorf("Content-Length %d exceeds maximum allowed %d bytes", len(buf), MaxAllowedSize)
+	if data.Len() > MaxAllowedSize {
+		return nil, fmt.Errorf("Content-Length %d exceeds maximum allowed %d bytes", data.Len(), MaxAllowedSize)
 	}
 
-	return buf, nil
+	return data.Bytes(), nil
 }
 
 // func newHTTPRequest(ireq *http.Request, method string, url *url.URL) *http.Request {
