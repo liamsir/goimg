@@ -73,14 +73,10 @@ var GetFileVersionsFor = func(w http.ResponseWriter, r *http.Request, ps httprou
 
 var DeleteFile = func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	userId, err := strconv.Atoi(ps.ByName("userId"))
+	user := r.Context().Value("user").(uint)
 	id := ps.ByName("id")
-	if err != nil {
-		//The passed path parameter is not an integer
-		u.Respond(w, u.Message(false, "There was an error in your request"))
-		return
-	}
-	data, err := models.DeleteFile(userId, id)
+
+	data, err := models.DeleteFile(int(user), id)
 	if err != nil {
 		resp := u.Message(false, err.Error())
 		u.Respond(w, resp)

@@ -2,6 +2,8 @@ package models
 
 import (
 	u "imgserver/api/utils"
+	"strconv"
+	"strings"
 
 	"github.com/jinzhu/gorm"
 )
@@ -45,12 +47,83 @@ func (domain *Domain) Create() map[string]interface{} {
 	return resp
 }
 
-func GetDomain(id uint) *Domain {
+func (domain *Domain) Update() map[string]interface{} {
+
+	if resp, ok := domain.Validate(); !ok {
+		return resp
+	}
+	domainToUpdate := Domain{}
+	err := GetDB().Table("domains").Where("user_id = ? AND id = ?", domain.UserId, domain.ID).First(&domainToUpdate).Error
+	if err != nil {
+		return nil
+	}
+	domainToUpdate.Name = domain.Name
+	domainToUpdate.Type = domain.Type
+
+	GetDB().Save(&domainToUpdate)
+
+	resp := u.Message(true, "success")
+	resp["domain"] = domain
+	return resp
+}
+
+func (domain *Domain) Patch() map[string]interface{} {
+
+	if resp, ok := domain.Validate(); !ok {
+		return resp
+	}
+
+	d := &Domain{}
+	err := GetDB().Table("domains").Where("user_id = ? AND id = ?", domain.UserId, domain.ID).First(d).Error
+	if err != nil {
+		return nil
+	}
+
+	patchFields := map[string]interface{}{}
+	if domain.Name != "" {
+		patchFields["name"] = domain.Name
+	}
+	if domain.Type != d.Type {
+		patchFields["type"] = domain.Type
+	}
+
+	db.Model(&d).Updates(patchFields)
+
+	resp := u.Message(true, "success")
+	resp["domain"] = domain
+	return resp
+}
+
+func GetDomain(userId uint, id int) *Domain {
 
 	contact := &Domain{}
-	err := GetDB().Table("domains").Where("id = ?", id).First(contact).Error
+	err := GetDB().Table("domains").Where("user_id = ? AND id = ?", userId, id).First(contact).Error
 	if err != nil {
 		return nil
 	}
 	return contact
+}
+
+func GetDomainsFor(user uint) []*Domain {
+	domains := make([]*Domain, 0)
+	err := GetDB().Table("domains").Where("user_id = ?", user).Find(&domains).Error
+	if err != nil {
+		return nil
+	}
+	return domains
+}
+func DeleteDomain(userId int, domains string) (*Domain, error) {
+	domainIds := []int{}
+	for _, i := range strings.Split(domains, ",") {
+		j, err := strconv.Atoi(i)
+		if err != nil {
+			panic(err)
+		}
+		domainIds = append(domainIds, j)
+	}
+	err := GetDB().Where("id IN(?) AND user_id = ?", domainIds, userId).Delete(&Domain{})
+	if err != nil {
+		return nil, err.Error
+	}
+	return &Domain{}, nil
 }
