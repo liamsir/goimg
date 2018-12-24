@@ -30,7 +30,8 @@ func main() {
 	router.POST("/api/user/login", controllers.Authenticate)
 
 	router.POST("/api/file/new", controllers.CreateFile)
-	router.GET("/api/user/:id/files", controllers.GetFilesFor)
+	router.GET("/api/files/page/:page", controllers.GetFilesFor)
+	router.DELETE("/api/user/:userId/file/:id", controllers.DeleteFile)
 
 	const uploadImageRoute = "/user/:user/upload/:signature/expires/:expires/file/:fileName"
 	router.POST(uploadImageRoute, controllers.UploadImage)

@@ -3,6 +3,8 @@ package models
 import (
 	"fmt"
 	u "imgserver/api/utils"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
@@ -108,12 +110,31 @@ func GetFile(id uint) *File {
 	return file
 }
 
-func GetFilesFor(user uint) []*File {
+func GetFilesFor(user uint, page uint) []*File {
+	limit := uint(2)
+	offset := (page - 1) * limit
 	files := make([]*File, 0)
-	err := GetDB().Table("files").Where("user_id = ?", user).Find(&files).Error
+	err := GetDB().Order("id").Offset(offset).Limit(limit).Find(&files, "user_id = ?", user).Error
 	if err != nil {
 		fmt.Println(err)
 		return nil
 	}
 	return files
+}
+
+func DeleteFile(userId int, files string) (*File, error) {
+	fileIds := []int{}
+	for _, i := range strings.Split(files, ",") {
+		j, err := strconv.Atoi(i)
+		if err != nil {
+			panic(err)
+		}
+		fileIds = append(fileIds, j)
+	}
+
+	err := GetDB().Where("id IN(?) AND user_id = ?", fileIds, userId).Delete(&File{})
+	if err != nil {
+		return nil, err.Error
+	}
+	return &File{}, nil
 }

@@ -41,14 +41,35 @@ var CreateFile = func(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 
 var GetFilesFor = func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	id, err := strconv.Atoi(ps.ByName("id"))
+	user := r.Context().Value("user").(uint)
+	page, err := strconv.Atoi(ps.ByName("page"))
 	if err != nil {
 		//The passed path parameter is not an integer
 		u.Respond(w, u.Message(false, "There was an error in your request"))
 		return
 	}
 
-	data := models.GetFilesFor(uint(id))
+	data := models.GetFilesFor(uint(user), uint(page))
+	resp := u.Message(true, "success")
+	resp["data"] = data
+	u.Respond(w, resp)
+}
+
+var DeleteFile = func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	userId, err := strconv.Atoi(ps.ByName("userId"))
+	id := ps.ByName("id")
+	if err != nil {
+		//The passed path parameter is not an integer
+		u.Respond(w, u.Message(false, "There was an error in your request"))
+		return
+	}
+	data, err := models.DeleteFile(userId, id)
+	if err != nil {
+		resp := u.Message(false, err.Error())
+		u.Respond(w, resp)
+		return
+	}
 	resp := u.Message(true, "success")
 	resp["data"] = data
 	u.Respond(w, resp)
@@ -75,6 +96,12 @@ var UploadImage = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 
 	if err != nil {
 		u.Respond(w, u.Message(false, "There was an error in your request"))
+		return
+	}
+
+	imgValid := isImageValid(res)
+	if !imgValid {
+		u.Respond(w, u.Message(false, "Not valid image"))
 		return
 	}
 
@@ -311,4 +338,22 @@ func hash(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))
 	return h.Sum32()
+}
+
+func isImageValid(buff []byte) bool {
+	var MaxAllowedSize int = 15 * 1024 * 1000
+	AllowedMIME := map[string]bool{
+		"image/jpeg": true,
+		"image/jpg":  true,
+		"image/png":  true,
+	}
+
+	contentType := http.DetectContentType(buff)
+	if _, ok := AllowedMIME[contentType]; !ok {
+		return false
+	}
+	if len(buff) > MaxAllowedSize {
+		return false
+	}
+	return true
 }
