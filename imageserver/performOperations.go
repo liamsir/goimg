@@ -18,6 +18,7 @@ type performOperationsParam struct {
 	userName       string
 	resource       string
 	userId         int
+	fileId         int
 	resourceHash   string
 }
 
@@ -91,6 +92,7 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 			UserName:            params.userName,
 			Name:                params.resource,
 			PerformedOperations: params.paramModifiers,
+			MasterId:            params.fileId,
 		})
 
 		if err != nil {

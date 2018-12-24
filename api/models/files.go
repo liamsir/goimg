@@ -14,7 +14,8 @@ type File struct {
 	gorm.Model
 	Name              string `json:"name"`
 	Hash              string `json:"hash"`
-	UserId            uint   `json:"user_id"` //The user that this contact belongs to
+	UserId            uint   `json:"user_id"`   //The user that this contact belongs to
+	MasterId          uint   `json:"master_id"` //The user that this contact belongs to
 	Type              uint   `json:"type"`
 	Operations        string `json:"operations"`
 	AllowedOperations string `json:"allowed_operations"`
@@ -111,10 +112,22 @@ func GetFile(id uint) *File {
 }
 
 func GetFilesFor(user uint, page uint) []*File {
-	limit := uint(2)
+	limit := uint(20)
 	offset := (page - 1) * limit
 	files := make([]*File, 0)
 	err := GetDB().Order("id").Offset(offset).Limit(limit).Find(&files, "user_id = ?", user).Error
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return files
+}
+
+func GetFileVersionsFor(user uint, fileId uint, page uint) []*File {
+	limit := uint(20)
+	offset := (page - 1) * limit
+	files := make([]*File, 0)
+	err := GetDB().Order("id").Offset(offset).Limit(limit).Find(&files, "user_id = ? AND master_id = ?", user, fileId).Error
 	if err != nil {
 		fmt.Println(err)
 		return nil

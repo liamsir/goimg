@@ -14,6 +14,7 @@ type fileEntity struct {
 	Name                string
 	Hash                string
 	UserId              int
+	MasterId            int
 	Type                int32
 	AllowedOperations   string
 	PerformedOperations string
@@ -73,9 +74,10 @@ func saveFileEntity(newFile fileEntity) (fileEntity, error) {
 			"type",
 			allowed_operations,
 			operations,
-			user_id
+			user_id,
+			master_id
 		)
-		VALUES(now(),  $1, $2, $3, $4, '', $5, (select id from "users" where username = $6)) RETURNING id, user_id;`
+		VALUES(now(),  $1, $2, $3, $4, '', $5, (select id from "users" where username = $6), $7) RETURNING id, user_id;`
 	fileGuid, err := uuid.NewRandom()
 
 	if err != nil {
@@ -102,6 +104,7 @@ func saveFileEntity(newFile fileEntity) (fileEntity, error) {
 		newFile.Type,
 		newFile.PerformedOperations,
 		newFile.UserName,
+		newFile.MasterId,
 	).Scan(&newFileId, &newFileUserId)
 
 	if errIn != nil {

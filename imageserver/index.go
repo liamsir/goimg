@@ -151,6 +151,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			resource:       paramResource,
 			userId:         userId,
 			resourceHash:   fileHash,
+			fileId:         fileId,
 		}, w, usageStats)
 	logRequest(requestEntity{
 		Body:   paramModifiers,

@@ -19,7 +19,7 @@ func init() {
 	}
 
 	db = conn
-	//db.Debug().AutoMigrate(&User{}, &File{}, &Log{}, &Domain{}) //Database migration
+	// db.Debug().AutoMigrate(&User{}, &File{}, &Log{}, &Domain{}) //Database migration
 }
 
 //returns a handle to the DB object
