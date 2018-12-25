@@ -145,9 +145,6 @@ var UploadImage = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		u.Respond(w, u.Message(false, fmt.Sprintf("ExpiredToken The provided token has expired.Request signature expired at:%s", tm.String())))
 		return
 	}
-	//return uploaded image url
-
-	// resp["signKey"] = signKey
 
 	// upload image
 	fileHash := fmt.Sprintf("%d", hash(fileName))
