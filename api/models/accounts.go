@@ -35,6 +35,15 @@ type User struct {
 	SecretKey string `json:"secret_key"`
 }
 
+type ForgotPasswordViewModel struct {
+	Email string
+}
+
+type ResetPasswordViewModel struct {
+	Token    string
+	Password string
+}
+
 //Validate incoming user details...
 func (account *User) Validate() (map[string]interface{}, bool) {
 
@@ -59,6 +68,17 @@ func (account *User) Validate() (map[string]interface{}, bool) {
 	}
 
 	return u.Message(false, "Requirement passed"), true
+}
+
+func (account *User) UpdatePassword() map[string]interface{} {
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(account.Password), bcrypt.DefaultCost)
+	account.Password = string(hashedPassword)
+
+	GetDB().Model(&account).Where("email = ?", account.Email).Update("password", account.Password)
+
+	response := u.Message(true, "Password has been updated")
+	return response
 }
 
 func (account *User) Create() map[string]interface{} {
@@ -167,5 +187,14 @@ func GetUserWithUsername(username string) *User {
 	}
 
 	acc.Password = ""
+	return acc
+}
+
+func GetUserWithEmail(email string) *User {
+	acc := &User{}
+	GetDB().Table("users").Where("email = ?", email).First(acc)
+	if acc.Email == "" { //User not found!
+		return nil
+	}
 	return acc
 }

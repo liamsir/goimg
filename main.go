@@ -26,8 +26,12 @@ func main() {
 	router.GET("/user/:user/resource/*resource", imageserver.Index)
 	router.GET("/healthz", imageserver.Health)
 
+	//Account
 	router.POST("/api/user/new", controllers.CreateAccount)
 	router.POST("/api/user/login", controllers.Authenticate)
+	router.GET("/api/user/me", controllers.GetUserProfile)
+	router.POST("/api/accounts/forogotpassword", controllers.ForgotPassword)
+	router.POST("/api/accounts/resetpassword", controllers.ResetPassword)
 
 	router.POST("/api/files/new", controllers.CreateFile)
 	router.GET("/api/files/page/:page", controllers.GetFilesFor)

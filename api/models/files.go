@@ -151,3 +151,13 @@ func DeleteFile(userId int, files string) (*File, error) {
 	}
 	return &File{}, nil
 }
+
+func GetFilesForHash(master string, version string, username string) []*File {
+	files := make([]*File, 0)
+	err := GetDB().Table("files").Where(`(hash = ? and type = 0) or hash = ? and user_id = (select id from "users" where username = $3)`, master, version, username).Find(&files).Error
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return files
+}

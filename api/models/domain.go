@@ -112,6 +112,19 @@ func GetDomainsFor(user uint) []*Domain {
 	}
 	return domains
 }
+func GetDomainsForUserName(username string, dType int32) map[string]bool {
+	domains := make([]*Domain, 0)
+	err := GetDB().Table("domains").Where(`user_id = (select id from "users" where username = ?) and type = ? `, username, dType).Find(&domains).Error
+	if err != nil {
+		return nil
+	}
+	res := make(map[string]bool)
+	for _, element := range domains {
+		res[element.Name] = true
+	}
+
+	return res
+}
 func DeleteDomain(userId int, domains string) (*Domain, error) {
 	domainIds := []int{}
 	for _, i := range strings.Split(domains, ",") {

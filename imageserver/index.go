@@ -48,8 +48,8 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	usageStats := getUsage(paramUser)
 
-	fmt.Println("getResourceInfo0 ", resource[0].Id)
-	fmt.Println("getResourceInfo1 ", resource[1].Id)
+	fmt.Println("getResourceInfo0 ", resource[0].ID)
+	fmt.Println("getResourceInfo1 ", resource[1].ID)
 
 	// 1. Serve image from cache
 	servedFromCache, e := serveImageFromCache(resource, w, r, usageStats, debugMode)
@@ -68,8 +68,8 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		if e != nil || servedOriginalImage {
 			logRequest(requestEntity{
 				Body:   "",
-				FileId: resource[0].Id,
-				UserId: resource[0].UserId,
+				FileId: int(resource[0].ID),
+				UserId: int(resource[0].UserId),
 				Type:   1,
 			})
 			fmt.Println("Served original image.")
@@ -92,8 +92,8 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 					originalResource.UserId,
 					originalResource.Hash,
 				)
-			userId = originalResource.UserId
-			fileId = originalResource.Id
+			userId = int(originalResource.UserId)
+			fileId = int(originalResource.ID)
 			fileHash = originalResource.Hash
 		} else {
 			fmt.Println("Operation is not allowed.")

@@ -15,10 +15,12 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		notAuth := map[string]bool{
-			"/api/user/new":   true,
-			"/api/user/login": true,
-			"/healthz":        true,
-			"/api/signUrl":    true,
+			"/api/user/new":                 true,
+			"/api/user/login":               true,
+			"/healthz":                      true,
+			"/api/signUrl":                  true,
+			"/api/accounts/forogotpassword": true,
+			"/api/accounts/resetpassword":   true,
 		}
 		requestPath := r.URL.Path //current request path
 

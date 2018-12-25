@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	u "imgserver/api/utils"
+	"log"
 
 	"github.com/jinzhu/gorm"
 )
@@ -14,6 +15,13 @@ type Log struct {
 	UserId uint   `json:"user_id"`
 	FileId uint   `json:"file_id"`
 }
+
+/*
+	0 served from cache
+	1 served original image
+	2 download resource and save in blob
+	3 performOperations
+*/
 
 /*
  This struct function validate the required parameters sent through the http request body
@@ -65,4 +73,24 @@ func GetLogs(user uint) []*Log {
 		return nil
 	}
 	return logs
+}
+
+func GetUsage(userId string) map[int]int {
+	res := make(map[int]int)
+	rows, err := GetDB().Table("logs").Where(`user_id = (select id from "users" where username = ?)`, userId).Select(`"type" as type, count(Id) as total`).Group("type").Rows()
+	if err != nil {
+		return nil
+	}
+	for rows.Next() {
+		var (
+			requestType  int
+			requestCount int
+		)
+		err = rows.Scan(&requestType, &requestCount)
+		if err != nil {
+			log.Fatal(err)
+		}
+		res[requestType] = requestCount
+	}
+	return res
 }

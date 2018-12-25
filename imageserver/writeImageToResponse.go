@@ -3,6 +3,7 @@ package imageserver
 import (
 	"encoding/json"
 	"fmt"
+	"imgserver/api/models"
 	"net/http"
 	"os"
 	"strconv"
@@ -44,7 +45,7 @@ func fetchImageAndWriteToResponse(url string, w http.ResponseWriter) {
 	writeFileToResponseWriter(buf, w)
 }
 
-func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter, r *http.Request, usageStats map[int]int, debug bool) (bool, error) {
+func serveImageFromCache(resource map[uint]models.File, w http.ResponseWriter, r *http.Request, usageStats map[int]int, debug bool) (bool, error) {
 
 	if cachedResource, ok := resource[1]; ok {
 		originalResource, ok := resource[0]
@@ -58,8 +59,8 @@ func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter, r
 
 		logRequest(requestEntity{
 			Body:   "",
-			FileId: resource[1].Id,
-			UserId: resource[1].UserId,
+			FileId: int(resource[1].ID),
+			UserId: int(resource[1].UserId),
 			Type:   0,
 		})
 		fileName := fmt.Sprintf("%d/%s_/%s",
@@ -82,7 +83,7 @@ func serveImageFromCache(resource map[int32]fileEntity, w http.ResponseWriter, r
 	return false, nil
 }
 
-func serveOriginalImage(resource map[int32]fileEntity, w http.ResponseWriter, r *http.Request, usageStats map[int]int, debug bool) (bool, error) {
+func serveOriginalImage(resource map[uint]models.File, w http.ResponseWriter, r *http.Request, usageStats map[int]int, debug bool) (bool, error) {
 	originalResource, ok := resource[0]
 	if !ok {
 		return false, fmt.Errorf("Error.")
