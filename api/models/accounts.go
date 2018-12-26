@@ -27,12 +27,13 @@ type Token struct {
 //a struct to rep user account
 type User struct {
 	gorm.Model
-	Email     string `json:"email"`
-	Username  string `json:"username"`
-	LastName  string `json:"last_name"`
-	Password  string `json:"password"`
-	Token     string `json:"token" sql:"-"`
-	SecretKey string `json:"secret_key"`
+	Email        string `json:"email"`
+	Username     string `json:"username"`
+	LastName     string `json:"last_name"`
+	Password     string `json:"password"`
+	Token        string `json:"token" sql:"-"`
+	RefreshToken string `json:"refresh_token"`
+	SecretKey    string `json:"secret_key"`
 }
 
 type ForgotPasswordViewModel struct {
@@ -94,6 +95,11 @@ func (account *User) Create() map[string]interface{} {
 		return u.Message(false, err.Error())
 	}
 	account.SecretKey = secretKey
+	refreshToken, err := generateSecreyKey()
+	if err != nil {
+		return u.Message(false, err.Error())
+	}
+	account.RefreshToken = refreshToken
 	GetDB().Create(account)
 
 	if account.ID <= 0 {
@@ -140,6 +146,38 @@ func Login(email, password string) map[string]interface{} {
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
 		return u.Message(false, "Invalid login credentials. Please try again")
 	}
+	//Worked! Logged In
+	account.Password = ""
+
+	//Create JWT token
+	tk := &Token{UserId: account.ID}
+	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), tk)
+	tokenString, _ := token.SignedString([]byte(token_password))
+	account.Token = tokenString //Store the token in the response
+
+	resp := u.Message(true, "Logged In")
+	resp["account"] = account
+	return resp
+}
+
+func LoginWithRefreshToken(email, refreshToken string) map[string]interface{} {
+
+	account := &User{}
+	err := GetDB().Table("users").Where("(refresh_token = '') is not true AND email = ? AND refresh_token = ?", email, refreshToken).First(account).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return u.Message(false, "User not found")
+		}
+		return u.Message(false, "Connection error. Please retry")
+	}
+
+	newRefreshToken, err := generateSecreyKey()
+	if err != nil {
+		return u.Message(false, err.Error())
+	}
+	account.RefreshToken = newRefreshToken
+	db.Model(&account).Update("refresh_token", newRefreshToken)
+
 	//Worked! Logged In
 	account.Password = ""
 

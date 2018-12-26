@@ -46,6 +46,20 @@ var Authenticate = func(w http.ResponseWriter, r *http.Request, _ httprouter.Par
 	resp := models.Login(account.Email, account.Password)
 	u.Respond(w, resp)
 }
+
+var AuthenticateWithRefreshToken = func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
+	account := &models.User{}
+	err := json.NewDecoder(r.Body).Decode(account) //decode the request body into struct and failed if any error occur
+	if err != nil {
+		u.Respond(w, u.Message(false, "Invalid request"))
+		return
+	}
+
+	resp := models.LoginWithRefreshToken(account.Email, account.RefreshToken)
+	u.Respond(w, resp)
+}
+
 var forgotPasswordSecret = "oCgv-dCHy2eGcsjeGFdR9K-uEdIqhYT8rdK1Tq2Cdqyb0m4YbWXy8XXxL1FVno6VTiYpMgAA8_bsp-Q9Yk_xww"
 
 var ForgotPassword = func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {

@@ -21,6 +21,7 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 			"/api/signUrl":                  true,
 			"/api/accounts/forogotpassword": true,
 			"/api/accounts/resetpassword":   true,
+			"/api/user/login/refresh-token": true,
 		}
 		requestPath := r.URL.Path //current request path
 
