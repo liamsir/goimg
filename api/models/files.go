@@ -145,11 +145,30 @@ func DeleteFile(userId int, files string) (*File, error) {
 		fileIds = append(fileIds, j)
 	}
 
-	err := GetDB().Where("id IN(?) AND user_id = ?", fileIds, userId).Delete(&File{})
+	err := GetDB().Where("id IN(?) AND user_id = ?", fileIds, userId).Delete(&File{}).Error
+
 	if err != nil {
-		return nil, err.Error
+		return nil, err
 	}
 	return &File{}, nil
+}
+
+func GetFilesForIds(userId int, files string) []*File {
+	fileIds := []int{}
+	for _, i := range strings.Split(files, ",") {
+		j, err := strconv.Atoi(i)
+		if err != nil {
+			panic(err)
+		}
+		fileIds = append(fileIds, j)
+	}
+	filesSlice := make([]*File, 0)
+	err := GetDB().Table("files").Where("id IN(?) AND user_id = ?", fileIds, userId).Find(&filesSlice).Error
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return filesSlice
 }
 
 func GetFilesForHash(master string, version string, username string) []*File {

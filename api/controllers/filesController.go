@@ -76,14 +76,24 @@ var DeleteFile = func(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	user := r.Context().Value("user").(uint)
 	id := ps.ByName("id")
 
-	data, err := models.DeleteFile(int(user), id)
+	filesToDelete := models.GetFilesForIds(int(user), id)
+	fmt.Println("deletedFiles", filesToDelete)
+
+	_, err := models.DeleteFile(int(user), id)
+
+	if err != nil {
+		resp := u.Message(false, err.Error())
+		u.Respond(w, resp)
+		return
+	}
+	err = imageserver.DeleteFiles(filesToDelete)
 	if err != nil {
 		resp := u.Message(false, err.Error())
 		u.Respond(w, resp)
 		return
 	}
 	resp := u.Message(true, "success")
-	resp["data"] = data
+	resp["data"] = filesToDelete
 	u.Respond(w, resp)
 }
 

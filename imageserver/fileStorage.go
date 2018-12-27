@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"imgserver/api/models"
 	"io"
 	"log"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
@@ -44,6 +46,46 @@ func SaveObject(object FileObject) {
 	// 	panic(err)
 	// }
 	fmt.Println("done writing file")
+}
+
+func DeleteFiles(files []*models.File) error {
+	bucketName := "imgmdf"
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx, option.WithCredentialsFile("MyProject-89e0f34eb7a6.json"))
+	if err != nil {
+		log.Fatalf("Failed to create client: %v", err)
+	}
+	var d []string
+	for i := 0; i < len(files); i += 1 {
+		f := files[i]
+		o := fmt.Sprintf("%d/%s", f.UserId, f.Hash)
+
+		if f.Type == 0 {
+			q := storage.Query{Prefix: o}
+			o := client.Bucket(bucketName).Objects(ctx, &q)
+			for {
+				ob, err := o.Next()
+				if err == iterator.Done {
+					break
+				}
+				if err != nil {
+					return err
+				}
+				d = append(d, ob.Name)
+			}
+
+		}
+		d = append(d, o)
+	}
+
+	for j := 0; j < len(d); j += 1 {
+		fmt.Println("deleting", d[j])
+		o := client.Bucket(bucketName).Object(d[j])
+		if err := o.Delete(ctx); err != nil {
+			//return err
+		}
+	}
+	return nil
 }
 
 type downloadAndSaveObjectParams struct {
