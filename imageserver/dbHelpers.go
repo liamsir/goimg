@@ -34,6 +34,7 @@ func getResourceInfo(params getFileParams) map[uint]models.File {
 	resp := models.GetFilesForHash(master, version, userName)
 	res := make(map[uint]models.File)
 	for _, element := range resp {
+		fmt.Println("elem", element)
 		res[element.Type] = *element
 	}
 	return res

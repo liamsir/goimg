@@ -20,12 +20,11 @@ func init() {
 	}
 
 	db = conn
-
+	db.LogMode(true)
 	db.Debug().AutoMigrate(&User{}, &File{}, &Log{}, &Domain{}) //Database migration
 }
 
 //returns a handle to the DB object
 func GetDB() *gorm.DB {
-
 	return db
 }

@@ -39,12 +39,16 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		writeError(w)
 		return
 	}
-
 	resource := getResourceInfo(getFileParams{
 		userName:  paramUser,
 		modifiers: paramModifiers,
 		resource:  paramResource,
 	})
+	if len(resource) == 0 {
+		fmt.Println("failed to load data")
+		writeError(w)
+		return
+	}
 
 	usageStats := getUsage(paramUser)
 
@@ -78,6 +82,12 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	fmt.Println("Beginning to perform image transformation...")
+	modifiers, err := parseModifiers(paramModifiers)
+	fmt.Println("modifiers", modifiers)
+	if err != nil {
+		writeError(w)
+		return
+	}
 	var originalResourceUrl string
 	var userId int
 	var fileId int
@@ -143,16 +153,21 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	fmt.Println("performing operations...", originalResourceUrl)
-	_, err := performOperationsAndWriteImageToRequest(
+	status, err := performOperationsAndWriteImageToRequest(
 		performOperationsParam{
-			resourceUrl:    originalResourceUrl,
-			paramModifiers: paramModifiers,
-			userName:       paramUser,
-			resource:       paramResource,
-			userId:         userId,
-			resourceHash:   fileHash,
-			fileId:         fileId,
+			resourceUrl:     originalResourceUrl,
+			modifiers:       modifiers,
+			modifiersString: paramModifiers,
+			userName:        paramUser,
+			resource:        paramResource,
+			userId:          userId,
+			resourceHash:    fileHash,
+			fileId:          fileId,
 		}, w, usageStats)
+	if !status || err != nil {
+		writeError(w)
+		return
+	}
 	logRequest(requestEntity{
 		Body:   paramModifiers,
 		FileId: fileId,

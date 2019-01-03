@@ -13,13 +13,18 @@ import (
 )
 
 type performOperationsParam struct {
-	paramModifiers string
-	resourceUrl    string
-	userName       string
-	resource       string
-	userId         int
-	fileId         int
-	resourceHash   string
+	modifiers       []imageOperation
+	modifiersString string
+	resourceUrl     string
+	userName        string
+	resource        string
+	userId          int
+	fileId          int
+	resourceHash    string
+}
+type imageOperation struct {
+	name  string
+	value map[string]int
 }
 
 func performOperationsAndWriteImageToRequest(params performOperationsParam, w http.ResponseWriter, usageStats map[int]int) (bool, error) {
@@ -52,16 +57,12 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 		return false, err
 	}
 
-	modifiers, err := parseModifiers(params.paramModifiers)
-	if err != nil {
-		return false, fmt.Errorf("Error.")
-	}
-	fmt.Println(modifiers)
-	if len(modifiers) > 0 {
+	fmt.Println(params.modifiers)
+	if len(params.modifiers) > 0 {
 		// 5. Perform transformations, and save transformed image to blob and db
 
-		for i := 0; i < len(modifiers); i += 1 {
-			modifier := modifiers[i]
+		for i := 0; i < len(params.modifiers); i += 1 {
+			modifier := params.modifiers[i]
 			fmt.Println(modifier)
 			if modifier.name == "resize" {
 				if modifier.value["mode"] == 0 {
@@ -91,7 +92,7 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 			Type:                1,
 			UserName:            params.userName,
 			Name:                params.resource,
-			PerformedOperations: params.paramModifiers,
+			PerformedOperations: params.modifiersString,
 			MasterId:            params.fileId,
 		})
 

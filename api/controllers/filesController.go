@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -21,8 +22,18 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-//const serverUrl = "http://localhost:3000"
-const serverUrl = "https://imgserver-testing.herokuapp.com"
+var serverUrl = ""
+var envoirment = "local"
+
+func init() {
+	port := os.Getenv("PORT")
+	fmt.Println("port", port)
+	if port == "3001" {
+		serverUrl = "http://localhost:3000"
+	} else {
+		serverUrl = "https://imgserver-testing.herokuapp.com"
+	}
+}
 
 var CreateFile = func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	user := r.Context().Value("user").(uint) //Grab the id of the user that send the request
@@ -104,6 +115,15 @@ var UploadImage = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	userName := ps.ByName("user")
 	expires := ps.ByName("expires")
 
+	fileHash := fmt.Sprintf("%d", hash(fileName))
+
+	// check if file exists
+	fileExists := models.GetFilesForHash(fileHash, "", userName)
+	if len(fileExists) > 0 {
+		u.Respond(w, u.Message(false, "File exists already."))
+		return
+	}
+
 	//validate origin
 	errOrigin := imageserver.CheckOrigin(imageserver.CheckOriginParams{
 		UserName: userName,
@@ -157,7 +177,6 @@ var UploadImage = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	// upload image
-	fileHash := fmt.Sprintf("%d", hash(fileName))
 	var fileObject = imageserver.FileObject{
 		Body: res,
 		Name: fmt.Sprintf("%d/%s", user.ID, fileHash),

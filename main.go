@@ -53,6 +53,10 @@ func main() {
 	router.PATCH("/api/domains/:id", controllers.PatchDomain)
 	router.DELETE("/api/domains/:id", controllers.DeleteDomain)
 
+	// Reports Controller
+	router.GET("/api/reports/start/:start/end/:end", controllers.GetReportFor)
+	router.GET("/api/reports/logs/start/:start/end/:end/page/:page", controllers.GetLogsFor)
+
 	m := app.JwtAuthentication(router)
 	log.Fatal(http.ListenAndServe(":"+port, m))
 
