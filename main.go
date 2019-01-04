@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"imgserver/api/app"
 	"imgserver/api/controllers"
 	"imgserver/imageserver"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -57,7 +59,32 @@ func main() {
 	router.GET("/api/reports/start/:start/end/:end", controllers.GetReportFor)
 	router.GET("/api/reports/logs/start/:start/end/:end/page/:page", controllers.GetLogsFor)
 
+	router.GET("/", viewHandler)
+
 	m := app.JwtAuthentication(router)
 	log.Fatal(http.ListenAndServe(":"+port, m))
 
+}
+
+func viewHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	title := r.URL.Path
+	p, _ := loadPage(title)
+	fmt.Fprintf(w, "<div>%s</div>", p.Body)
+}
+
+type Page struct {
+	Title string
+	Body  []byte
+}
+
+func loadPage(title string) (*Page, error) {
+	if title == "/" {
+		title = "index/index.html"
+	}
+	filename := "web/views/" + title
+	body, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	return &Page{Title: title, Body: body}, nil
 }
