@@ -1,1 +1,5 @@
 govendor add +external
+
+
+reflex -c reflex.conf --verbose
+\.go$

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"imgserver/api/app"
 	"imgserver/api/controllers"
 	"imgserver/imageserver"
+	"imgserver/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -59,7 +61,13 @@ func main() {
 	router.GET("/api/reports/start/:start/end/:end", controllers.GetReportFor)
 	router.GET("/api/reports/logs/start/:start/end/:end/page/:page", controllers.GetLogsFor)
 
-	router.GET("/", viewHandler)
+	// router.GET("/", viewHandler)
+
+	router.GET("/", func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		buffer := new(bytes.Buffer)
+		template.HomeIndex(buffer)
+		w.Write(buffer.Bytes())
+	})
 
 	m := app.JwtAuthentication(router)
 	log.Fatal(http.ListenAndServe(":"+port, m))
