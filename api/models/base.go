@@ -1,8 +1,6 @@
 package models
 
 import (
-	"fmt"
-
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
@@ -12,16 +10,16 @@ var connectionString string = "postgres://jxbnzxtecqvcsv:9f603a3b7a60b5583f668fa
 
 func init() {
 
-	conn, err := gorm.Open("postgres", connectionString)
-
-	// conn.DB().SetMaxOpenConns(2)
-	if err != nil {
-		fmt.Print(err)
-	}
-
-	db = conn
-	db.LogMode(true)
-	db.Debug().AutoMigrate(&User{}, &File{}, &Log{}, &Domain{}) //Database migration
+	// conn, err := gorm.Open("postgres", connectionString)
+	//
+	// // conn.DB().SetMaxOpenConns(2)
+	// if err != nil {
+	// 	fmt.Print(err)
+	// }
+	//
+	// db = conn
+	// db.LogMode(true)
+	// db.Debug().AutoMigrate(&User{}, &File{}, &Log{}, &Domain{}) //Database migration
 }
 
 //returns a handle to the DB object

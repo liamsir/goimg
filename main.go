@@ -2,12 +2,10 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"imgserver/api/app"
 	"imgserver/api/controllers"
 	"imgserver/imageserver"
 	"imgserver/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -68,31 +66,23 @@ func main() {
 		template.HomeIndex(buffer)
 		w.Write(buffer.Bytes())
 	})
+	router.GET("/documentation", func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		buffer := new(bytes.Buffer)
+		template.GettingStartedIndex(buffer)
+		w.Write(buffer.Bytes())
+	})
+	router.GET("/documentation/upload-image", func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		buffer := new(bytes.Buffer)
+		template.UploadObjectIndex(buffer)
+		w.Write(buffer.Bytes())
+	})
+	router.GET("/documentation/modify-image", func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		buffer := new(bytes.Buffer)
+		template.ModifyImageIndex(buffer)
+		w.Write(buffer.Bytes())
+	})
 
 	m := app.JwtAuthentication(router)
 	log.Fatal(http.ListenAndServe(":"+port, m))
 
-}
-
-func viewHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	title := r.URL.Path
-	p, _ := loadPage(title)
-	fmt.Fprintf(w, "<div>%s</div>", p.Body)
-}
-
-type Page struct {
-	Title string
-	Body  []byte
-}
-
-func loadPage(title string) (*Page, error) {
-	if title == "/" {
-		title = "index/index.html"
-	}
-	filename := "web/views/" + title
-	body, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	return &Page{Title: title, Body: body}, nil
 }
