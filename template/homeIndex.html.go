@@ -33,10 +33,9 @@ func HomeIndex(buffer *bytes.Buffer) {
   .url-modifiers{
     font-weight: bold;
   }
-
-  .container {
+  /*.container {
     padding: 3rem;
-  }
+  }*/
   .bd-main-container {
   }
   .bd-duo {
@@ -68,6 +67,20 @@ func HomeIndex(buffer *bytes.Buffer) {
     font-weight: bold;
     text-decoration-color: #3273dc;
   }
+  .bd-main{
+    padding: 0 3rem;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bd-side-background{
+    bottom: 0;
+    left: 50%;
+    position: absolute;
+    right: 0;
+    top: 0;
+    background-color: #fafafa;
+  }
 </style>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -88,11 +101,12 @@ func HomeIndex(buffer *bytes.Buffer) {
 </head>
 <body>
  `)
-	buffer.WriteString(`<nav class="navbar is-light" role="navigation" aria-label="main navigation">
+	buffer.WriteString(`<nav class="navbar  has-shadow is-spaced" role="navigation" aria-label="main navigation">
+<div class="container">
 <div class="navbar-brand">
-<a class="navbar-item" href="https://bulma.io">
+<!--<a class="navbar-item" href="https://bulma.io">
   <img src="" width="112" height="28">
-</a>
+</a>-->
 
 <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
   <span aria-hidden="true"></span>
@@ -120,6 +134,7 @@ func HomeIndex(buffer *bytes.Buffer) {
       </a>
     </div>
   </div>
+</div>
 </div>
 </div>
 </nav>

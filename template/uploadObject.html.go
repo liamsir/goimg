@@ -33,10 +33,9 @@ func UploadObjectIndex(buffer *bytes.Buffer) {
   .url-modifiers{
     font-weight: bold;
   }
-
-  .container {
+  /*.container {
     padding: 3rem;
-  }
+  }*/
   .bd-main-container {
   }
   .bd-duo {
@@ -68,6 +67,20 @@ func UploadObjectIndex(buffer *bytes.Buffer) {
     font-weight: bold;
     text-decoration-color: #3273dc;
   }
+  .bd-main{
+    padding: 0 3rem;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bd-side-background{
+    bottom: 0;
+    left: 50%;
+    position: absolute;
+    right: 0;
+    top: 0;
+    background-color: #fafafa;
+  }
 </style>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -88,11 +101,12 @@ func UploadObjectIndex(buffer *bytes.Buffer) {
 </head>
 <body>
  `)
-	buffer.WriteString(`<nav class="navbar is-light" role="navigation" aria-label="main navigation">
+	buffer.WriteString(`<nav class="navbar  has-shadow is-spaced" role="navigation" aria-label="main navigation">
+<div class="container">
 <div class="navbar-brand">
-<a class="navbar-item" href="https://bulma.io">
+<!--<a class="navbar-item" href="https://bulma.io">
   <img src="" width="112" height="28">
-</a>
+</a>-->
 
 <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
   <span aria-hidden="true"></span>
@@ -122,20 +136,23 @@ func UploadObjectIndex(buffer *bytes.Buffer) {
   </div>
 </div>
 </div>
+</div>
 </nav>
 `)
 	buffer.WriteString(`
 
-    <div class="bd-main-container container">
-      <nav class="breadcrumb" aria-label="breadcrumbs">
-  <ul>
-    <li><a href="/">Home</a></li>
-    <li><a href="/documentation">Documentation</a></li>
-    <li><a href="/documentation" id="current-article">Getting Started</a></li>
-  </ul>
-</nav>
+<main class="bd-main">
+<div class="bd-side-background"></div>
+<div class="bd-main-container container">
       <div class="bd-duo">
         <div class="bd-lead">
+          <nav class="breadcrumb" aria-label="breadcrumbs">
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/documentation">Documentation</a></li>
+            <li><a href="/documentation" id="current-article">Getting Started</a></li>
+          </ul>
+        </nav>
 `)
 	buffer.WriteString(`
 <h1 class="title">Upload Image</h1>
@@ -178,6 +195,7 @@ func UploadObjectIndex(buffer *bytes.Buffer) {
         </aside>
       </div>
     </div>
+  </main>
 `)
 	buffer.WriteString(`<footer class="footer">
   <div class="content has-text-centered">
