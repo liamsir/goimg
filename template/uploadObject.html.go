@@ -14,10 +14,6 @@ func UploadObjectIndex(buffer *bytes.Buffer) {
     <title>Hello Bulma!</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
-    <style>
-
-    </body>
-</html>
 <style>
   .bd-index-header{
     text-align: center;
@@ -147,7 +143,28 @@ func UploadObjectIndex(buffer *bytes.Buffer) {
       A simple <strong>container</strong> to center your content horizontally
   </p>
   <hr style="margin: 0 0 3rem;">
-  <p>Lorem ipsum</p>
+  <div class="content is-small">
+    <h2>URL Signing</h2>
+    <p>Curabitur accumsan turpis pharetra <strong>augue tincidunt</strong> blandit. Quisque condimentum maximus mi, sit amet commodo arcu rutrum id. Proin pretium urna vel cursus venenatis. Suspendisse potenti. Etiam mattis sem rhoncus lacus dapibus facilisis. Donec at dignissim dui. Ut et neque nisl.</p>
+    <ul>
+    <li>Account Username</li>
+    <li>Secret Key</li>
+    <li>Image metadata</li>
+    </ul>
+</div>
+  <pre>
+    <code class="language-js">
+    POST localhost:3000/user/ismajl/signUrl
+    {
+    	"SecretKey": "m3RY3lHdXCcDqOV1aAblcbvXOt3u0imgrpWkI7eIs1bnbZrIeP8nl-pvByMNseEX0bcZWLqwusNvuzDpDYMbrg",
+    	"Image":
+        {
+      		"Name": "nyc",
+      		"ContentType": "image/jpeg",
+      		"ContentLength": 1440239
+      	}
+    }
+  </code></pre>
 `)
 	buffer.WriteString(`        </div>
         <aside class="bd-side">
