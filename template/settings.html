@@ -1,0 +1,59 @@
+<%: func SettingsIndex(buffer *bytes.Buffer) %>
+<%+ "dashboard_start.html" %>
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+  var li = document.createElement('li');
+  li.innerHTML = '<a href="/settings">Settings</a>'
+  document.querySelector('.breadcrumb ul').appendChild(li);
+});
+
+</script>
+<p class="title">
+  User details
+</p>
+  <hr style="margin: 0 0 3rem;">
+  <div class="field">
+  <label class="label">Username</label>
+  <div class="control">
+    <p>ismajl</p>
+  </div>
+  </div>
+  <div class="field">
+  <label class="label">Email</label>
+  <div class="control">
+    <p>helloismjal@gmail.com</p>
+  </div>
+  </div>
+<br/>
+<p class="title">
+  Secret key
+</p>
+<hr style="margin: 0 0 3rem;">
+<div class="field">
+<label class="label">Secret Key</label>
+<div class="control">
+  <p>***************************************</p>
+  <a class="button">Reveal</a>
+</div>
+</div>
+<br/>
+<p class="title">
+  Allowed domains
+</p>
+<hr style="margin: 0 0 3rem;">
+<label class="label">Allowed domains</label>
+<table class="table">
+  <tbody>
+  <tr>
+    <td><input class="input" type="text" value="localhost:3001"/></td>
+    <td><a class="button is-danger">Delete</a></td>
+  </tr>
+  <tr>
+    <td>http://imgserver-testing.herokuapp.com/</td>
+    <td><a class="button is-danger">Delete</a></td>
+  </tr>
+</tbody>
+</table>
+
+<%+ "dashboard_end.html" %>

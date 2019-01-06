@@ -115,7 +115,7 @@ func GetFilesFor(user uint, page uint) []*File {
 	limit := uint(20)
 	offset := (page - 1) * limit
 	files := make([]*File, 0)
-	err := GetDB().Order("id").Offset(offset).Limit(limit).Find(&files, "user_id = ?", user).Error
+	err := GetDB().Order("created_at desc").Offset(offset).Limit(limit).Find(&files, "user_id = ? AND master_id = 0", user).Error
 	if err != nil {
 		fmt.Println(err)
 		return nil
@@ -127,7 +127,7 @@ func GetFileVersionsFor(user uint, fileId uint, page uint) []*File {
 	limit := uint(20)
 	offset := (page - 1) * limit
 	files := make([]*File, 0)
-	err := GetDB().Order("id").Offset(offset).Limit(limit).Find(&files, "user_id = ? AND master_id = ?", user, fileId).Error
+	err := GetDB().Order("created_at desc").Offset(offset).Limit(limit).Find(&files, "user_id = ? AND master_id = ?", user, fileId).Error
 	if err != nil {
 		fmt.Println(err)
 		return nil

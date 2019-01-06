@@ -1,0 +1,181 @@
+<%: func DashboardIndex(buffer *bytes.Buffer) %>
+<%+ "dashboard_start.html" %>
+<script>
+    var userName = getUserName();
+
+    function fileMasterOnClick(e, t) {
+
+      e.preventDefault();
+      page = 1;
+      if(t === 0){
+        var li = document.createElement('li');
+        li.innerHTML = `<a id="${e.target.id}" onclick="fileMasterOnClick(event, 1)">${e.target.text}</a>`;
+        document.querySelector('.breadcrumb ul').appendChild(li);
+      }
+
+      var loadingView = '<a style="border: 0;" class="button is-loading is-fullwidth is-large">Loading</a>';
+      document.querySelector('#dashboard-content').innerHTML = loadingView;
+      var fileId = e.target.id;
+      getFileVersionsForPage(fileId, page, function(response){
+        // console.log(data)
+        if (!response.status){
+          displayError(response.message);
+          return;
+        }
+        if (response.status && !response.data.length){
+          var nothingToSeeView = `
+          <div class="notification">
+            There's no version of  this file. <a href="/documentation/modify-image" target="blank">Check this document to see how to modify uploaded images.</a>
+          </div>
+        `;
+          document.querySelector('#dashboard-content').innerHTML = nothingToSeeView;
+          return;
+        }
+
+        var userName = getUserName();
+        var itemsListView = ``;
+        for (var i =0; i < response.data.length; i+=1) {
+          var item = response.data[i];
+          itemsListView += createVersionItem(item, userName)
+        }
+
+        var listView = `
+          <table class="table">
+            <tbody>
+             ${itemsListView}
+          </table>
+        `
+        if (response.data.length === 20){
+          listView += `
+            <a id="${fileId}" class="button is-white" onclick=loadVersions(event)>Load more</a>
+          `
+        }
+      document.querySelector('#dashboard-content').innerHTML = listView;
+
+      })
+    }
+
+    function displayError(message){
+      var errorView = `
+      <div class="notification is-danger">
+        ${message}
+          <br/>
+         <a class="button is-small" href="/dashboard">Retry</a>
+      </div>
+      `
+      document.querySelector('#dashboard-content').innerHTML = errorView;
+    }
+
+    var page = 1;
+
+    function createItem(item, userName){
+      return `
+          <tr>
+            <td><a id="${item.ID}" onclick="fileMasterOnClick(event, 0)">${item.name}</a></td>
+            <td>${item.CreatedAt}</td>
+            <td><a class="button is-text" target="_blank" href="${IMGSERVER_URL}/user/${userName}/resource/${item.name}">View</a></td>
+            <td><a class="button is-text" style="background: white; color:#ff3860">Delete</a></td>
+          </tr>
+          `
+    }
+
+    function createVersionItem(item, userName){
+      return `
+          <tr>
+            <td>${item.name}</td>
+            <td>${item.operations}</td>
+            <td>${item.CreatedAt}</td>
+            <td><a class="button is-text" target="_blank" href="${IMGSERVER_URL}/user/${userName}/modifiers/${item.operations}/resource/${item.name}">View</a></td>
+            <td><a class="button is-text" style="background: white; color:#ff3860">Delete</a></td>
+          </tr>
+          `
+    }
+
+    function loadVersions(e){
+        e.preventDefault();
+        page += 1;
+        e.target.classList.add('is-loading');
+        getFileVersionsForPage(e.target.id, page, function(response){
+          if (response.data && response.data.length) {
+            var itemsListView = ``;
+            for (var i =0; i < response.data.length; i+=1) {
+              var item = response.data[i];
+              itemsListView += createVersionItem(item, userName)
+            }
+            document.querySelector('table tbody').innerHTML += itemsListView
+            e.target.classList.remove('is-loading');
+          }
+          if (response.data.length != 20) {
+            e.target.remove();
+          }
+        })
+    }
+
+    function loadMoreMasters(e){
+        e.preventDefault();
+        page += 1;
+        e.target.classList.add('is-loading');
+        getFilesForPage(page, function(response){
+          if (response.data && response.data.length) {
+            var itemsListView = ``;
+            for (var i =0; i < response.data.length; i+=1) {
+              var item = response.data[i];
+              itemsListView += createItem(item, userName)
+            }
+            document.querySelector('table tbody').innerHTML += itemsListView
+            e.target.classList.remove('is-loading');
+          }
+
+          if (response.data.length != 20) {
+            e.target.remove();
+          }
+
+        })
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+      var li = document.createElement('li');
+      li.innerHTML = '<a href="/dashboard">Objects</a>'
+      document.querySelector('.breadcrumb ul').appendChild(li);
+
+      getFilesForPage(page, function(response){
+        if (!response.status){
+          displayError(response.message);
+          return;
+        }
+
+        if (page == 1 && response.status && !response.data.length){
+          var nothingToSeeView = `
+          <div class="notification">
+            Bucket is empty. <a href="/documentation/upload-image" target="blank">Check this document to see how to upload images.</a>
+          </div>
+        `;
+          document.querySelector('#dashboard-content').innerHTML = nothingToSeeView;
+          return;
+        }
+        var itemsListView = ``;
+        for (var i =0; i < response.data.length; i+=1) {
+          var item = response.data[i];
+          itemsListView +=  createItem(item, userName)
+        }
+
+        var listView = `
+          <table class="table">
+            <tbody>
+             ${itemsListView}
+          </table>
+        `
+        if (response.data.length === 20){
+          listView += `
+            <a class="button is-white" onclick=loadMoreMasters(event)>Load more</a>
+          `
+        }
+      document.querySelector('#dashboard-content').innerHTML = listView;
+      })
+    })
+</script>
+<div id="dashboard-content">
+  <a style="border: 0;" class="button is-loading is-fullwidth is-large">Loading</a>
+</div>
+<%+ "dashboard_end.html" %>

@@ -82,6 +82,34 @@ func main() {
 		w.Write(buffer.Bytes())
 	})
 
+	router.GET("/signup", func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		buffer := new(bytes.Buffer)
+		template.SignUpIndex(buffer)
+		w.Write(buffer.Bytes())
+	})
+
+	router.GET("/login", func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		buffer := new(bytes.Buffer)
+		template.LoginIndex(buffer)
+		w.Write(buffer.Bytes())
+	})
+	router.GET("/dashboard", func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		buffer := new(bytes.Buffer)
+		template.DashboardIndex(buffer)
+		w.Write(buffer.Bytes())
+	})
+	router.GET("/dashboard/metrics", func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		buffer := new(bytes.Buffer)
+		template.MetricsIndex(buffer)
+		w.Write(buffer.Bytes())
+	})
+
+	router.GET("/dashboard/settings", func(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+		buffer := new(bytes.Buffer)
+		template.SettingsIndex(buffer)
+		w.Write(buffer.Bytes())
+	})
+
 	m := app.JwtAuthentication(router)
 	log.Fatal(http.ListenAndServe(":"+port, m))
 

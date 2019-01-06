@@ -1,0 +1,122 @@
+<%: func LoginIndex(buffer *bytes.Buffer) %>
+
+<%+ "layout_start.html" %>
+<script>
+
+  if (Cookies.get('user')){
+    window.location.replace("/dashboard");
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    if (Cookies.get('user')){
+      return;
+    }
+    function validateEmail(email) {
+      var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      return re.test(String(email).toLowerCase());
+    }
+    function createError(err){
+      let paragraph = document.createElement("p");
+      let text = document.createTextNode(err ? err : "This field is required!");
+      paragraph.appendChild(text);
+      paragraph.classList.add('help');
+      paragraph.classList.add('is-danger');
+      return paragraph;
+    }
+    let form = document.querySelector('#form')
+    let submitButton = form.querySelector("#submit");
+    submitButton.onclick = function (e) {
+      e.preventDefault();
+      var email = form.querySelector("#email");
+      var password = form.querySelector("#password");
+      if (!email.value.length || !validateEmail(email.value)) {
+        email.classList.add('is-danger');
+
+        let emailControl = form.querySelector('.email-control');
+        let prevErr = emailControl.querySelector('p.is-danger');
+        if (prevErr){
+          prevErr.remove();
+        }
+        let err = createError()
+        emailControl.appendChild(err);
+
+        email.onfocus = function() {
+          email.classList.remove('is-danger');
+          if (err){
+            err.remove();
+          }
+        }
+      }
+      if (!password.value.length || password.value.length < 6) {
+        password.classList.add('is-danger');
+        let pwdControl = form.querySelector('.password-control');
+        let prevErr = pwdControl.querySelector('p.is-danger');
+        if (prevErr){
+          prevErr.remove();
+        }
+        let err = createError();
+        pwdControl.appendChild(err);
+        password.onfocus = function() {
+          password.classList.remove('is-danger');
+          if (err){
+            err.remove();
+          }
+        }
+      }
+
+      if (email.value.length && password.value.length && validateEmail(email.value)) {
+        submitButton.classList.add('is-loading')
+        submitLogin({ email: email.value, password: password.value }, function(data){
+          submitButton.classList.remove('is-loading')
+          if (data.status) {
+            Cookies.set('user', data);
+            window.location.replace("/dashboard");
+          } else {
+              let prevErr = form.querySelector('p.is-danger');
+              if (prevErr){
+                prevErr.remove();
+              }
+              let err = createError(data.message);
+              form.appendChild(err);
+          }
+        });
+      }
+    }
+  })
+</script>
+<section class="hero">
+  <div class="hero-body">
+      <div class="container has-text-centered">
+          <div class="column is-4 is-offset-4">
+              <h3 class="title">Log in</h3>
+              <p class="subtitle">Access your account.</p>
+              <div class="box">
+                  <form id="form">
+                      <div class="field">
+                          <div class="control email-control">
+                              <input id="email" class="input is-large" type="email" placeholder="Your Email" autofocus="">
+                          </div>
+                      </div>
+                      <div class="field">
+                          <div class="control password-control">
+                              <input id="password" class="input is-large" type="password" placeholder="Your Password">
+                          </div>
+                      </div>
+                      <div class="field">
+                          <label class="checkbox">
+            <input type="checkbox">
+            Remember me
+          </label>
+                      </div>
+                      <button id="submit" class="button is-block is-info is-large is-fullwidth">Log in</button>
+                  </form>
+              </div>
+              <p class="has-text-grey">
+                  <a href="/signup">Sign up</a> &nbsp;·&nbsp;
+              </p>
+          </div>
+      </div>
+  </div>
+</section>
+
+<%+ "layout_end.html" %>

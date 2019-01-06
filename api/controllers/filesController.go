@@ -68,7 +68,7 @@ var GetFilesFor = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 var GetFileVersionsFor = func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	user := r.Context().Value("user").(uint)
-	fileId, err := strconv.Atoi(ps.ByName("fileId"))
+	fileId, err := strconv.Atoi(ps.ByName("id"))
 	page, err := strconv.Atoi(ps.ByName("page"))
 	if err != nil {
 		//The passed path parameter is not an integer

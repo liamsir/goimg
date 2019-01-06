@@ -1,0 +1,73 @@
+<%: func MetricsIndex(buffer *bytes.Buffer) %>
+<%+ "dashboard_start.html" %>
+<style>
+  #chart_div{
+    margin-left: -4em;
+  }
+  .chart {
+    width: 100%;
+    min-height: 450px;
+  }
+  .row {
+    margin:0 !important;
+  }
+</style>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+  var li = document.createElement('li');
+  li.innerHTML = '<a href="/metrics">Metrics</a>'
+  document.querySelector('.breadcrumb ul').appendChild(li);
+});
+
+google.charts.load('current', {packages: ['corechart', 'line']});
+google.charts.setOnLoadCallback(drawBasic);
+
+function drawBasic() {
+
+      var data = new google.visualization.DataTable();
+      data.addColumn('date', 'Data');
+      data.addColumn('number', 'Requests');
+      data.addColumn('number', 'Image edits');
+
+      data.addRows([
+        [new Date(2019, 3, 1), 123, 5],
+        [new Date(2019, 4, 1), 150, 6],
+        [new Date(2019, 5, 1), 160, 7],
+        [new Date(2019, 7, 1), 140, 8],
+        [new Date(2019, 8, 1), 280, 12],
+      ]);
+
+      var options = {
+        height: 500,
+        chartArea: {width: '80%', height: '80%'},
+        hAxis: {
+            gridlines: {
+                color: 'transparent'
+            },
+        },
+        vAxis: {
+            gridlines: {
+                color: '#f0f0f0'
+            },
+            minorGridlines: {
+              color: 'transparent'
+            }
+        },
+        lineWidth: 4,
+        colors: ['#3273dc', '#b9c246']
+      };
+
+      var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+
+      chart.draw(data, options);
+    }
+</script>
+<div class="row">
+  <div class="clearfix"></div>
+  <div class="col-md-6">
+     <div id="chart_div"></div>
+  </div>
+</div>
+<%+ "dashboard_end.html" %>

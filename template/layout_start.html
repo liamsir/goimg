@@ -6,6 +6,9 @@
     <title>Hello Bulma!</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+    <%+ "js.html" %>
 <style>
   .bd-index-header{
     text-align: center;
@@ -78,16 +81,21 @@
   document.addEventListener('DOMContentLoaded', function() {
     var currentLocation = window.location.toString();
     var active = currentLocation.substr(currentLocation.lastIndexOf('/') + 1);
-    var navItem = document.querySelector('.articles li a#' + active);
-    navItem.classList.add('is-active');
-    var current_article =  document.querySelector('#current-article');
-    var route_name = {
-      'documentation' : 'Getting Started',
-      'upload-image': 'Upload Image',
-      'modify-image': 'Modify Image',
+    if (active) {
+      var navItem = document.querySelector('.articles li a#' + active);
+      if (navItem) {
+        navItem.classList.add('is-active');
+        var current_article =  document.querySelector('#current-article');
+        var route_name = {
+          'documentation' : 'Getting Started',
+          'upload-image': 'Upload Image',
+          'modify-image': 'Modify Image',
+        }
+        current_article.text = route_name[active]
+        current_article.href = '/documentation' + active === 'documentation' ? '' : active
+      }
     }
-    current_article.text = route_name[active]
-    current_article.href = '/documentation' + active === 'documentation' ? '' : active
+
   }, false);
 </script>
 </head>

@@ -180,6 +180,7 @@ func LoginWithRefreshToken(email, refreshToken string) map[string]interface{} {
 
 	//Worked! Logged In
 	account.Password = ""
+	account.SecretKey = ""
 
 	//Create JWT token
 	tk := &Token{UserId: account.ID}

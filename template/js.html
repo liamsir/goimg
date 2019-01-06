@@ -1,0 +1,81 @@
+<script>
+var IMGSERVER_URL = 'http://localhost:3001'
+var API_URL = 'http://localhost:3001/api'
+function submitLogin(data, callback) {
+  axios.post(API_URL + '/user/login', data)
+  .then(function (response) {
+    callback(response.data)
+    console.log(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
+function logout(e){
+  e.preventDefault();
+  Cookies.remove('user');
+  window.location.replace("/");
+}
+document.addEventListener('DOMContentLoaded', function() {
+
+  var userView = `
+    <div>
+      test@gmail.com
+      <a href="/" id="logout" onclick="logout(event)">Logout</a>
+    </div>
+  `;
+
+  var registerLoginButtons = `
+    <a class="button is-primary" href="/signup">
+      <strong>Sign up</strong>
+    </a>
+    <a class="button is-light"  href="/login">
+      Log in
+    </a>
+  `
+  if (Cookies.get('user')){
+    document.querySelector('.nav-top-left').innerHTML = userView;
+    let logout = document.querySelector("#logout");
+  } else {
+    document.querySelector('.nav-top-left').innerHTML = registerLoginButtons;
+  }
+})
+
+function getFilesForPage(page, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/files/page/' + page, config)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
+function getFileVersionsForPage(master, page, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/file/'+master+'/versions/page/' + page, config)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
+function getUserName(){
+  if (Cookies.get('user')){
+    var user = JSON.parse(Cookies.get('user'));
+    return user.account.username;
+  }
+  return '';
+}
+</script>

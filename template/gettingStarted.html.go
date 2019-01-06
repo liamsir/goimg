@@ -14,6 +14,92 @@ func GettingStartedIndex(buffer *bytes.Buffer) {
     <title>Hello Bulma!</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+    `)
+	buffer.WriteString(`<script>
+var IMGSERVER_URL = 'http://localhost:3001'
+var API_URL = 'http://localhost:3001/api'
+function submitLogin(data, callback) {
+  axios.post(API_URL + '/user/login', data)
+  .then(function (response) {
+    callback(response.data)
+    console.log(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
+function logout(e){
+  e.preventDefault();
+  Cookies.remove('user');
+  window.location.replace("/");
+}
+document.addEventListener('DOMContentLoaded', function() {
+
+  var userView = ` + "`" + `
+    <div>
+      test@gmail.com
+      <a href="/" id="logout" onclick="logout(event)">Logout</a>
+    </div>
+  ` + "`" + `;
+
+  var registerLoginButtons = ` + "`" + `
+    <a class="button is-primary" href="/signup">
+      <strong>Sign up</strong>
+    </a>
+    <a class="button is-light"  href="/login">
+      Log in
+    </a>
+  ` + "`" + `
+  if (Cookies.get('user')){
+    document.querySelector('.nav-top-left').innerHTML = userView;
+    let logout = document.querySelector("#logout");
+  } else {
+    document.querySelector('.nav-top-left').innerHTML = registerLoginButtons;
+  }
+})
+
+function getFilesForPage(page, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/files/page/' + page, config)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
+function getFileVersionsForPage(master, page, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/file/'+master+'/versions/page/' + page, config)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
+function getUserName(){
+  if (Cookies.get('user')){
+    var user = JSON.parse(Cookies.get('user'));
+    return user.account.username;
+  }
+  return '';
+}
+</script>
+`)
+	buffer.WriteString(`
 <style>
   .bd-index-header{
     text-align: center;
@@ -86,16 +172,21 @@ func GettingStartedIndex(buffer *bytes.Buffer) {
   document.addEventListener('DOMContentLoaded', function() {
     var currentLocation = window.location.toString();
     var active = currentLocation.substr(currentLocation.lastIndexOf('/') + 1);
-    var navItem = document.querySelector('.articles li a#' + active);
-    navItem.classList.add('is-active');
-    var current_article =  document.querySelector('#current-article');
-    var route_name = {
-      'documentation' : 'Getting Started',
-      'upload-image': 'Upload Image',
-      'modify-image': 'Modify Image',
+    if (active) {
+      var navItem = document.querySelector('.articles li a#' + active);
+      if (navItem) {
+        navItem.classList.add('is-active');
+        var current_article =  document.querySelector('#current-article');
+        var route_name = {
+          'documentation' : 'Getting Started',
+          'upload-image': 'Upload Image',
+          'modify-image': 'Modify Image',
+        }
+        current_article.text = route_name[active]
+        current_article.href = '/documentation' + active === 'documentation' ? '' : active
+      }
     }
-    current_article.text = route_name[active]
-    current_article.href = '/documentation' + active === 'documentation' ? '' : active
+
   }, false);
 </script>
 </head>
@@ -122,16 +213,13 @@ func GettingStartedIndex(buffer *bytes.Buffer) {
   <a class="navbar-item" href="/documentation">
     Documentation
   </a>
+  <a class="navbar-item" href="/dashboard">
+    Dashboard
+  </a>
 </div>
 <div class="navbar-end">
   <div class="navbar-item">
-    <div class="buttons">
-      <a class="button is-primary">
-        <strong>Sign up</strong>
-      </a>
-      <a class="button is-light">
-        Log in
-      </a>
+    <div class="buttons nav-top-left">
     </div>
   </div>
 </div>
@@ -146,7 +234,7 @@ func GettingStartedIndex(buffer *bytes.Buffer) {
 <div class="bd-main-container container">
       <div class="bd-duo">
         <div class="bd-lead">
-          <nav class="breadcrumb" aria-label="breadcrumbs">
+          <nav class="breadcrumb has-bullet-separator" aria-label="breadcrumbs">
           <ul>
             <li><a href="/">Home</a></li>
             <li><a href="/documentation">Documentation</a></li>
@@ -192,9 +280,7 @@ func GettingStartedIndex(buffer *bytes.Buffer) {
 	buffer.WriteString(`<footer class="footer">
   <div class="content has-text-centered">
     <p>
-      <strong>Bulma</strong> by <a href="https://jgthms.com">Jeremy Thomas</a>. The source code is licensed
-      <a href="http://opensource.org/licenses/mit-license.php">MIT</a>. The website content
-      is licensed <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY NC SA 4.0</a>.
+      © 2018 foo
     </p>
   </div>
 </footer>
