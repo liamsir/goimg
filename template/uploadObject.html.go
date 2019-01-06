@@ -167,6 +167,9 @@ function getUserName(){
     top: 0;
     background-color: #fafafa;
   }
+  .bd-side-background{
+    background-color: white;
+  }
 </style>
 <script>
   document.addEventListener('DOMContentLoaded', function() {

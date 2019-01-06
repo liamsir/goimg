@@ -64,10 +64,46 @@ function drawBasic() {
       chart.draw(data, options);
     }
 </script>
+<p class="title">
+  Overview
+</p>
+  <hr style="margin: 0 0 3rem;">
 <div class="row">
   <div class="clearfix"></div>
   <div class="col-md-6">
-     <div id="chart_div"></div>
+     <div id="chart_div">
+       <a style="border: 0;" class="button is-loading is-fullwidth is-large">Loading</a>
+     </div>
   </div>
 </div>
+<p class="title">
+  Logs
+</p>
+<hr style="margin: 0 0 3rem;">
+<table class="table">
+  <thead>
+    <tr>
+      <th>File name</th>
+      <th>Time</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>16521230968_5cbd96f727_h.jpeg</td>
+    <td>2019-01-06T14:29:27</td>
+    <td>Fetched from cache</td>
+  </tr>
+  <tr>
+    <td>nyc.jpg</td>
+    <td>2019-01-06T14:29:27</td>
+    <td>Fetched from cache</td>
+  </tr>
+  <tr>
+    <td>resize=width:1400,height:700/nyc.jpg</td>
+    <td>2019-01-06T14:29:27</td>
+    <td>Fetched from cache</td>
+  </tr>
+</tbody>
+</table>
 <%+ "dashboard_end.html" %>

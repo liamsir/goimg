@@ -167,6 +167,9 @@ function getUserName(){
     top: 0;
     background-color: #fafafa;
   }
+  .bd-side-background{
+    background-color: white;
+  }
 </style>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -420,6 +423,10 @@ if (!Cookies.get('user')){
       })
     })
 </script>
+<p class="title">
+  Uploaded images
+</p>
+  <hr style="margin: 0 0 3rem;">
 <div id="dashboard-content">
   <a style="border: 0;" class="button is-loading is-fullwidth is-large">Loading</a>
 </div>
