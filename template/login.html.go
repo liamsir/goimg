@@ -124,21 +124,14 @@ function getUserName(){
   }*/
   .bd-main-container {
   }
-  .bd-duo {
-    display: flex;
-  }
+
   .bd-lead {
     position: relative;
     margin-left: -3rem;
     padding: 3rem;
-    background-color: #fff;
-    overflow: hidden;
-    flex-grow: 1;
-    flex-shrink: 1;
   }
   .bd-side {
     padding: 3rem 0 3rem 1.5rem;
-    flex: 0 0 calc(10.5rem + 1.5rem);
     position: relative;
   }
   .footer{
@@ -170,6 +163,59 @@ function getUserName(){
   .bd-side-background{
     background-color: white;
   }
+  @media screen and (max-width:1087px) {
+     .bd-lead,.bd-side {
+      padding:1.5rem
+     }
+  }
+  @media screen and (max-width:1087px) {
+   .bd-side-background {
+    display:none
+   }
+  }
+@media screen and (min-width:1088px) {
+   .bd-duo {
+    display:flex
+   }
+   .bd-lead {
+    background-color:#fff;
+    overflow:hidden;
+    flex-grow:1;
+    flex-shrink:1
+   }
+   .bd-side {
+    flex:0 0 calc(10.5rem + 1.5rem);
+   }
+ }
+ @media screen and (min-width:1088px) {
+ .bd-main {
+  padding:0 3rem
+ }
+ .bd-lead {
+  margin-left:-3rem;
+  padding:3rem
+ }
+ .bd-lead:last-child {
+  margin-right:-3rem
+ }
+ .bd-side {
+  padding:3rem 0 3rem 1.5rem
+ }
+}
+@media screen and (min-width:1088px) {
+ .bd-duo {
+  display:flex
+ }
+ .bd-lead {
+  background-color:#fff;
+  overflow:hidden;
+  flex-grow:1;
+  flex-shrink:1
+ }
+ .bd-side {
+  flex:0 0 calc(10.5rem + 1.5rem);
+ }
+}
 </style>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
