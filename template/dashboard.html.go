@@ -37,9 +37,10 @@ function logout(e){
 }
 document.addEventListener('DOMContentLoaded', function() {
 
+  var username = getUserName();
   var userView = ` + "`" + `
     <div>
-      test@gmail.com
+      ${username}
       <a href="/" id="logout" onclick="logout(event)">Logout</a>
     </div>
   ` + "`" + `;
@@ -96,6 +97,113 @@ function getUserName(){
     return user.account.username;
   }
   return '';
+}
+function getSettings(callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/user/me', config)
+  .then(function (response) {
+    callback(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error});
+  })
+}
+
+function createDomain(data, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.post(API_URL + '/domains', data, config)
+  .then(function (response) {
+    callback(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error});
+  })
+}
+
+function deleteDomain(data, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.delete(API_URL + '/domains/' + data, config)
+  .then(function (response) {
+    callback(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error});
+  })
+}
+
+function deleteFile(data, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.delete(API_URL + '/files/' + data, config)
+  .then(function (response) {
+    callback(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error});
+  })
+}
+
+
+
+
+/**
+ * RegExps.
+ * A URL must match #1 and then at least one of #2/#3.
+ * Use two levels of REs to avoid REDOS.
+ */
+// Credits https://github.com/segmentio/is-url/blob/master/index.js
+var protocolAndDomainRE = /^(?:\w+:)?\/\/(\S+)$/;
+
+var localhostDomainRE = /^localhost[\:?\d]*(?:[^\:?\d]\S*)?$/
+var nonLocalhostDomainRE = /^[^\s\.]+\.\S{2,}$/;
+
+/**
+ * Loosely validate a URL ` + "`" + `string` + "`" + `.
+ *
+ * @param {String} string
+ * @return {Boolean}
+ */
+
+function isUrl(string){
+  if (typeof string !== 'string') {
+    return false;
+  }
+
+  var match = string.match(protocolAndDomainRE);
+  if (!match) {
+    return false;
+  }
+
+  var everythingAfterProtocol = match[1];
+  if (!everythingAfterProtocol) {
+    return false;
+  }
+
+  if (localhostDomainRE.test(everythingAfterProtocol) ||
+      nonLocalhostDomainRE.test(everythingAfterProtocol)) {
+    return true;
+  }
+
+  return false;
 }
 </script>
 `)
@@ -160,9 +268,9 @@ function getUserName(){
     top: 0;
     background-color: #fafafa;
   }
-  .bd-side-background{
+  /* .bd-side-background{
     background-color: white;
-  }
+  } */
   @media screen and (max-width:1087px) {
      .bd-lead,.bd-side {
       padding:1.5rem
@@ -216,6 +324,33 @@ function getUserName(){
   flex:0 0 calc(10.5rem + 1.5rem);
  }
 }
+.navbar{
+    background-color: #142c5d;
+}
+.navbar a{
+  color: #d2d2d2;
+  font-weight: bold;
+}
+.navbar a:first-child {
+  color: white;
+}
+.navbar a:first-child:hover {
+  background-color: transparent;
+}
+.navbar a:last-child {
+  /*color: white;*/
+  /*text-decoration: underline;*/
+}
+.navbar a:last-child:hover {
+  color:  #142c5d;
+}
+.nav-top-left {
+  color: white;
+}
+.nav-top-left #logout {
+  color: white;
+  font-weight: bold;
+}
 </style>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -256,6 +391,9 @@ function getUserName(){
 </div>
 <div id="navbarBasicExample" class="navbar-menu">
 <div class="navbar-start">
+  <a class="navbar-item">
+    imgserver
+   </a>
   <a class="navbar-item" href="/">
     Home
   </a>
@@ -297,8 +435,16 @@ if (!Cookies.get('user')){
 <script>
     var userName = getUserName();
 
-    function fileMasterOnClick(e, t) {
+    function noVersionToSeeView() {
+      var nvtsView = ` + "`" + `
+        <div class="notification">
+          There's no version of  this file. <a href="/documentation/modify-image" target="blank">Check this document to see how to modify uploaded images.</a>
+        </div>
+        ` + "`" + `;
+      document.querySelector('#dashboard-content').innerHTML = nvtsView;
+    }
 
+    function fileMasterOnClick(e, t) {
       e.preventDefault();
       page = 1;
       if(t === 0){
@@ -317,12 +463,8 @@ if (!Cookies.get('user')){
           return;
         }
         if (response.status && !response.data.length){
-          var nothingToSeeView = ` + "`" + `
-          <div class="notification">
-            There's no version of  this file. <a href="/documentation/modify-image" target="blank">Check this document to see how to modify uploaded images.</a>
-          </div>
-        ` + "`" + `;
-          document.querySelector('#dashboard-content').innerHTML = nothingToSeeView;
+
+          noVersionToSeeView();
           return;
         }
 
@@ -364,23 +506,23 @@ if (!Cookies.get('user')){
 
     function createItem(item, userName){
       return ` + "`" + `
-          <tr>
+          <tr id="tr-${item.ID}">
             <td><a id="${item.ID}" onclick="fileMasterOnClick(event, 0)">${item.name}</a></td>
             <td>${item.CreatedAt}</td>
             <td><a class="button is-text" target="_blank" href="${IMGSERVER_URL}/user/${userName}/resource/${item.name}">View</a></td>
-            <td><a class="button is-text" style="background: white; color:#ff3860">Delete</a></td>
+            <td><a id="${item.ID}" onclick="deleteRow(event)" class="button is-text" style="background: white; color:#ff3860">Delete</a></td>
           </tr>
           ` + "`" + `
     }
 
     function createVersionItem(item, userName){
       return ` + "`" + `
-          <tr>
+          <tr id="tr-${item.ID}">
             <td>${item.name}</td>
             <td>${item.operations}</td>
             <td>${item.CreatedAt}</td>
             <td><a class="button is-text" target="_blank" href="${IMGSERVER_URL}/user/${userName}/modifiers/${item.operations}/resource/${item.name}">View</a></td>
-            <td><a class="button is-text" style="background: white; color:#ff3860">Delete</a></td>
+            <td><a id="${item.ID}" onclick="deleteRow(event)" class="button is-text" style="background: white; color:#ff3860">Delete</a></td>
           </tr>
           ` + "`" + `
     }
@@ -426,7 +568,14 @@ if (!Cookies.get('user')){
 
         })
     }
-
+    function nothingToSeeView(){
+      var ntsview = ` + "`" + `
+      <div class="notification">
+        Bucket is empty. <a href="/documentation/upload-image" target="blank">Check this document to see how to upload images.</a>
+      </div>
+    ` + "`" + `;
+      document.querySelector('#dashboard-content').innerHTML = ntsview;
+    }
     document.addEventListener('DOMContentLoaded', function() {
 
       var li = document.createElement('li');
@@ -440,12 +589,7 @@ if (!Cookies.get('user')){
         }
 
         if (page == 1 && response.status && !response.data.length){
-          var nothingToSeeView = ` + "`" + `
-          <div class="notification">
-            Bucket is empty. <a href="/documentation/upload-image" target="blank">Check this document to see how to upload images.</a>
-          </div>
-        ` + "`" + `;
-          document.querySelector('#dashboard-content').innerHTML = nothingToSeeView;
+          nothingToSeeView();
           return;
         }
         var itemsListView = ` + "`" + `` + "`" + `;
@@ -468,7 +612,63 @@ if (!Cookies.get('user')){
       document.querySelector('#dashboard-content').innerHTML = listView;
       })
     })
+    var deleteTargetId = 0;
+    function deleteRow(e) {
+      deleteTargetId = 0;
+        // displayNoDataView();
+        deleteTargetId = e.target.id;
+        document.querySelector('.modal').classList.add('is-active');
+    }
+    function closeConfirmModal(e){
+      e.preventDefault();
+      document.querySelector('.modal').classList.remove('is-active')
+    }
+    function deleteConfirm(e){
+      e.preventDefault();
+      e.target.classList.add('is-loading')
+      deleteFile(deleteTargetId, function(response){
+
+        if (response.status){
+            document.getElementById("tr-" + deleteTargetId).remove();
+
+            var countRows = document.querySelectorAll("table tr").length
+            if (countRows === 0) {
+             var depth = document.querySelectorAll(".breadcrumb li").length
+             if (depth == 2){
+               nothingToSeeView();
+             } else {
+               noVersionToSeeView();
+             }
+            }
+            deleteTargetId = 0;
+        }
+        else {
+          displayError(response.message);
+        }
+        e.target.classList.remove('is-loading');
+        document.querySelector('.modal').classList.remove('is-active');
+      })
+    }
 </script>
+<div class="modal">
+  <div class="modal-background"></div>
+  <div class="modal-content">
+    <article class="message">
+      <article class="message is-danger">
+        <div class="message-header">
+          <p>Warning</p>
+          <button class="delete" aria-label="delete"></button>
+        </div>
+        <div class="message-body">
+          <p>Are you sure you want to delete?</p>
+          <br/>
+          <a class="button is-white" onclick="closeConfirmModal(event)">Cancel</a>
+          <a class="button is-danger" onclick="deleteConfirm(event)">Confirm</a>
+        </div>
+      </article>
+  </div>
+  <button class="modal-close is-large" aria-label="close" onclick="closeConfirmModal(event)"></button>
+</div>
 <p class="title">
   Uploaded images
 </p>

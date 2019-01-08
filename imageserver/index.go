@@ -39,11 +39,13 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		writeError(w)
 		return
 	}
+
 	resource := getResourceInfo(getFileParams{
 		userName:  paramUser,
 		modifiers: paramModifiers,
 		resource:  paramResource,
 	})
+
 	if len(resource) == 0 {
 		fmt.Println("failed to load data")
 		writeError(w)

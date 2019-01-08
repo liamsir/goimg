@@ -29,8 +29,10 @@ var GetUserProfile = func(w http.ResponseWriter, r *http.Request, ps httprouter.
 	user := r.Context().Value("user").(uint)
 
 	data := models.GetUser(uint(user))
+	allowedDomains := models.GetDomainsFor(uint(user))
 	resp := u.Message(true, "success")
 	resp["data"] = data
+	resp["allowedDomains"] = allowedDomains
 	u.Respond(w, resp)
 }
 

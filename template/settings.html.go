@@ -37,9 +37,10 @@ function logout(e){
 }
 document.addEventListener('DOMContentLoaded', function() {
 
+  var username = getUserName();
   var userView = ` + "`" + `
     <div>
-      test@gmail.com
+      ${username}
       <a href="/" id="logout" onclick="logout(event)">Logout</a>
     </div>
   ` + "`" + `;
@@ -96,6 +97,113 @@ function getUserName(){
     return user.account.username;
   }
   return '';
+}
+function getSettings(callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/user/me', config)
+  .then(function (response) {
+    callback(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error});
+  })
+}
+
+function createDomain(data, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.post(API_URL + '/domains', data, config)
+  .then(function (response) {
+    callback(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error});
+  })
+}
+
+function deleteDomain(data, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.delete(API_URL + '/domains/' + data, config)
+  .then(function (response) {
+    callback(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error});
+  })
+}
+
+function deleteFile(data, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.delete(API_URL + '/files/' + data, config)
+  .then(function (response) {
+    callback(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error});
+  })
+}
+
+
+
+
+/**
+ * RegExps.
+ * A URL must match #1 and then at least one of #2/#3.
+ * Use two levels of REs to avoid REDOS.
+ */
+// Credits https://github.com/segmentio/is-url/blob/master/index.js
+var protocolAndDomainRE = /^(?:\w+:)?\/\/(\S+)$/;
+
+var localhostDomainRE = /^localhost[\:?\d]*(?:[^\:?\d]\S*)?$/
+var nonLocalhostDomainRE = /^[^\s\.]+\.\S{2,}$/;
+
+/**
+ * Loosely validate a URL ` + "`" + `string` + "`" + `.
+ *
+ * @param {String} string
+ * @return {Boolean}
+ */
+
+function isUrl(string){
+  if (typeof string !== 'string') {
+    return false;
+  }
+
+  var match = string.match(protocolAndDomainRE);
+  if (!match) {
+    return false;
+  }
+
+  var everythingAfterProtocol = match[1];
+  if (!everythingAfterProtocol) {
+    return false;
+  }
+
+  if (localhostDomainRE.test(everythingAfterProtocol) ||
+      nonLocalhostDomainRE.test(everythingAfterProtocol)) {
+    return true;
+  }
+
+  return false;
 }
 </script>
 `)
@@ -160,9 +268,9 @@ function getUserName(){
     top: 0;
     background-color: #fafafa;
   }
-  .bd-side-background{
+  /* .bd-side-background{
     background-color: white;
-  }
+  } */
   @media screen and (max-width:1087px) {
      .bd-lead,.bd-side {
       padding:1.5rem
@@ -216,6 +324,33 @@ function getUserName(){
   flex:0 0 calc(10.5rem + 1.5rem);
  }
 }
+.navbar{
+    background-color: #142c5d;
+}
+.navbar a{
+  color: #d2d2d2;
+  font-weight: bold;
+}
+.navbar a:first-child {
+  color: white;
+}
+.navbar a:first-child:hover {
+  background-color: transparent;
+}
+.navbar a:last-child {
+  /*color: white;*/
+  /*text-decoration: underline;*/
+}
+.navbar a:last-child:hover {
+  color:  #142c5d;
+}
+.nav-top-left {
+  color: white;
+}
+.nav-top-left #logout {
+  color: white;
+  font-weight: bold;
+}
 </style>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -256,6 +391,9 @@ function getUserName(){
 </div>
 <div id="navbarBasicExample" class="navbar-menu">
 <div class="navbar-start">
+  <a class="navbar-item">
+    imgserver
+   </a>
   <a class="navbar-item" href="/">
     Home
   </a>
@@ -295,41 +433,302 @@ if (!Cookies.get('user')){
 `)
 	buffer.WriteString(`
 <script>
+  document.title = "Dashboard - Settings";
 
-document.addEventListener('DOMContentLoaded', function() {
-  var li = document.createElement('li');
-  li.innerHTML = '<a href="/settings">Settings</a>'
-  document.querySelector('.breadcrumb ul').appendChild(li);
-});
+  document.addEventListener('DOMContentLoaded', function() {
+    var li = document.createElement('li');
+    li.innerHTML = '<a href="/dashboard/settings">Settings</a>'
+    document.querySelector('.breadcrumb ul').appendChild(li);
+  });
+
+  function userDetailsView(data) {
+    var view = ` + "`" + `
+    <div class="field">
+    <label class="label">Username</label>
+    <div class="control">
+      <p>${data.data.username}</p>
+    </div>
+    </div>
+    <div class="field">
+    <label class="label">Email</label>
+    <div class="control">
+      <p>${data.data.email}</p>
+    </div>
+    </div>
+    ` + "`" + `;
+    document.querySelector("#user-details").innerHTML = view;
+  }
+
+  function revealSecretKey(event) {
+    event.preventDefault();
+    var txt = ""
+    if (event.target.text == "Reveal") {
+      txt = document.querySelector("#secret_key").value;
+      event.target.text = "Hide"
+    } else {
+      var secretKeyLength = document.querySelector("#secret_key").value.length;
+      txt = new Array(secretKeyLength + 1).join( "*");
+      event.target.text = "Reveal"
+    }
+
+    document.querySelector("#secret-key-label").innerHTML = txt;
+  }
+
+  function secretKeyView(data) {
+    var view = ` + "`" + `
+    <div class="field">
+    <label class="label">Secret Key</label>
+    <div class="control">
+      <input type="hidden" id="secret_key" value=${data.data.secret_key}/>
+      <p id="secret-key-label">${new Array(data.data.secret_key.length + 1).join( "*")}</p>
+      <a class="button" onclick="revealSecretKey(event)">Reveal</a>
+    </div>
+    </div>
+    ` + "`" + `;
+    document.querySelector("#secret-key").innerHTML = view;
+  }
+  function clearErrors(){
+    var prevErr = document.getElementById("error");
+    if (prevErr){
+      prevErr.remove();
+    }
+  }
+  function displayError(message){
+    var errorView = ` + "`" + `
+    <div class="notification is-danger">
+      ${message}
+    </div>
+    ` + "`" + `
+    var prevErr = document.getElementById("error");
+    if (prevErr){
+      prevErr.remove();
+    }
+    var errorNode = document.createElement('div')
+    errorNode.id = "error";
+    errorNode.innerHTML = errorView;
+    document.querySelector('#allowed-domains').prepend(errorNode);
+  }
+  function clearNoData(){
+      var prevNoData = document.getElementById("nodata");
+      if (prevNoData){
+        prevNoData.remove();
+      }
+  }
+  function displayNoDataView(){
+
+    var prevNoData = document.getElementById("nodata");
+    if (prevNoData){
+      prevNoData.remove();
+    }
+
+    var countRows = document.querySelectorAll("table tr").length
+    if (countRows === 0){
+      var noDataView = ` + "`" + `
+      <div class="notification">
+        <p id="no-data">No data!</p>
+      </div>
+      ` + "`" + `;
+      var noDataNode = document.createElement('div')
+      noDataNode.id = "nodata";
+      noDataNode.innerHTML = noDataView;
+      document.querySelector('#allowed-domains').prepend(noDataNode);
+    }
+  }
+
+  function closeConfirmModal(e){
+    e.preventDefault();
+    document.querySelector('.modal').classList.remove('is-active')
+  }
+  function deleteConfirm(e){
+    e.preventDefault();
+    e.target.classList.add('is-loading')
+    deleteDomain(deleteTargetId, function(data){
+      console.log(data);
+      if (data.status){
+        document.getElementById("tr-" + deleteTargetId).remove();
+      }
+      else {
+        displayError(data.message);
+      }
+      e.target.classList.remove('is-loading');
+      document.querySelector('.modal').classList.remove('is-active')
+      displayNoDataView();
+      deleteTargetId = 0;
+    })
+  }
+  var deleteTargetId = 0;
+  function deleteRow(e) {
+    clearErrors();
+    deleteTargetId = 0;
+    if (e.target.id === "-1") {
+      document.getElementById("-1").remove();
+      var addNewDomain =  document.getElementById("addNewDomain")
+      addNewDomain.text = 'Add new domain'
+      addNewDomain.classList.remove('is-success');
+      addNewDomain.classList.remove('is-loading');
+      displayNoDataView();
+    } else {
+      deleteTargetId = e.target.id;
+      document.querySelector('.modal').classList.add('is-active');
+    }
+  }
+  function addNewDomain(e) {
+    e.preventDefault();
+    clearErrors();
+    clearNoData();
+    if(e.target.text == 'Add new domain') {
+      var newRow = document.createElement('tr');
+      newRow.id = "-1";
+      newRow.innerHTML = ` + "`" + `
+        <td>
+          <div class="control new-domain-control">
+            <input class="input" type="text" placeholder="Domain name" autofocus="autofocus"></input>
+          </div>
+        </td>
+        <td>
+          <div class="field">
+            <div class="control">
+              <div class="select">
+                <select id="domain-type">
+                  <option id="1" value="1">View Origin</option>
+                  <option id="2" value="2">Download Origin</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </td>
+        <td><a class="button " id="-1" onclick="deleteRow(event)">Cancel</a></td>
+      ` + "`" + `
+      document.querySelector('table tbody').appendChild(newRow);
+      e.target.text = 'Save'
+      e.target.classList.add('is-success')
+    } else {
+      var isFormValid = true;
+      e.target.classList.add('is-loading')
+      var newDomainControl = document.querySelector('.new-domain-control');
+      let input = newDomainControl.querySelector('input');
+      var validUrl = true;
+      if(input.value.length){
+        validUrl = isUrl(input.value);
+      }
+      if(!input.value.length || !validUrl){
+        var prevErr = newDomainControl.querySelector('p.help');
+        if (prevErr){
+          prevErr.remove();
+        }
+        let err = document.createElement('p');
+        err.classList.add('help')
+        err.classList.add('is-danger')
+        var errorMessage = 'This field is required!';
+        if (!validUrl) {
+          errorMessage =  ` + "`" + `Please enter a valid URL.` + "`" + `;
+        }
+        err.innerHTML = errorMessage;
+        newDomainControl.appendChild(err);
+        input.classList.add('is-danger')
+        input.onfocus = function(){
+          err.remove();
+          input.classList.remove('is-danger')
+          isFormValid = true;
+        }
+        isFormValid = false;
+        e.target.classList.remove('is-loading')
+      }
+      debugger
+      var inputType =  document.getElementById('domain-type');
+      var inputTypeValue = inputType.options[inputType.selectedIndex].value;
+      if (isFormValid) {
+        createDomain({
+          Name: input.value,
+          Type: parseInt(inputTypeValue),
+        }, function(response){
+          let addNewDomain =  document.getElementById("addNewDomain")
+
+          if(response.status){
+            var newDm = createTableRowView(response.domain);
+            document.getElementById("-1").remove();
+            document.querySelector("#allowed-domains tbody").innerHTML += newDm;
+            addNewDomain.text = 'Add new domain'
+            addNewDomain.classList.remove('is-success');
+            addNewDomain.classList.remove('is-loading')
+          }else{
+            displayError(response.message)
+            addNewDomain.classList.remove('is-loading')
+          }
+        });
+      }
+    }
+  }
+
+  function createTableRowView(item){
+    return ` + "`" + `
+    <tr id="tr-${item.ID}">
+      <td>${item.name}</td>
+      <td>${item.type === 1 ? 'View Origin' : 'Download Origin'} </td>
+      <td><a id=${item.ID} onclick="deleteRow(event)" style="background: white; color:#ff3860">Delete</a></td>
+    </tr>
+    ` + "`" + `
+  }
+  function allowedDomainsView(data) {
+    var tableRowsView = "";
+    for (var i = 0; i < data.allowedDomains.length; i +=1 ){
+      var item = data.allowedDomains[i];
+      tableRowsView += createTableRowView(item);
+    }
+    var view = ` + "`" + `
+      <table class="table">
+        <tbody>
+        ${tableRowsView}
+        </tbody>
+      </table>
+      <a class="button is-normal" id="addNewDomain" onclick="addNewDomain(event)">Add new domain</a>
+    ` + "`" + `;
+    document.querySelector("#allowed-domains").innerHTML = view;
+    displayNoDataView();
+  }
+
+  getSettings(function(data){
+    console.log(data)
+    userDetailsView(data);
+    secretKeyView(data);
+    allowedDomainsView(data);
+  });
 
 </script>
+<div class="modal">
+  <div class="modal-background"></div>
+  <div class="modal-content">
+    <article class="message">
+      <article class="message is-danger">
+        <div class="message-header">
+          <p>Warning</p>
+          <button class="delete" aria-label="delete"></button>
+        </div>
+        <div class="message-body">
+          <p>Are you sure you want to delete?</p>
+          <br/>
+          <a class="button is-white" onclick="closeConfirmModal(event)">Cancel</a>
+          <a class="button is-danger" onclick="deleteConfirm(event)">Confirm</a>
+        </div>
+      </article>
+  </div>
+  <button class="modal-close is-large" aria-label="close" onclick="closeConfirmModal(event)"></button>
+</div>
+
 <p class="title">
   User details
 </p>
   <hr style="margin: 0 0 3rem;">
-  <div class="field">
-  <label class="label">Username</label>
-  <div class="control">
-    <p>ismajl</p>
-  </div>
-  </div>
-  <div class="field">
-  <label class="label">Email</label>
-  <div class="control">
-    <p>helloismjal@gmail.com</p>
-  </div>
+  <div id="user-details">
+    <a style="border: 0;" class="button is-loading is-fullwidth is-large">Loading</a>
   </div>
 <br/>
 <p class="title">
   Secret key
 </p>
 <hr style="margin: 0 0 3rem;">
-<div class="field">
-<label class="label">Secret Key</label>
-<div class="control">
-  <p>***************************************</p>
-  <a class="button">Reveal</a>
-</div>
+<div id="secret-key">
+  <a style="border: 0;" class="button is-loading is-fullwidth is-large">Loading</a>
 </div>
 <br/>
 <p class="title">
@@ -337,19 +736,9 @@ document.addEventListener('DOMContentLoaded', function() {
 </p>
 <hr style="margin: 0 0 3rem;">
 <label class="label">Allowed domains</label>
-<table class="table">
-  <tbody>
-  <tr>
-    <td><input class="input" type="text" value="localhost:3001"/></td>
-    <td><a class="button is-danger">Delete</a></td>
-  </tr>
-  <tr>
-    <td>http://imgserver-testing.herokuapp.com/</td>
-    <td><a class="button is-danger">Delete</a></td>
-  </tr>
-</tbody>
-</table>
-
+<div id="allowed-domains">
+  <a style="border: 0;" class="button is-loading is-fullwidth is-large">Loading</a>
+</div>
 `)
 	buffer.WriteString(`</div>
 <aside class="bd-side">

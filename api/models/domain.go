@@ -30,6 +30,18 @@ func (domain *Domain) Validate() (map[string]interface{}, bool) {
 		return u.Message(false, "User is not recognized"), false
 	}
 
+	// Domain must be unique
+	temp := &Domain{}
+
+	//check for errors and duplicate domain
+	err := GetDB().Table("domains").Where("user_id = ? AND name = ? AND type = ?", domain.UserId, domain.Name, domain.Type).First(temp).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return u.Message(false, "Connection error. Please retry"), false
+	}
+	if temp.Name != "" {
+		return u.Message(false, "Domain address already exists."), false
+	}
+
 	//All the required parameters are present
 	return u.Message(true, "success"), true
 }

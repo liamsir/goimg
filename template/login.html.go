@@ -37,9 +37,10 @@ function logout(e){
 }
 document.addEventListener('DOMContentLoaded', function() {
 
+  var username = getUserName();
   var userView = ` + "`" + `
     <div>
-      test@gmail.com
+      ${username}
       <a href="/" id="logout" onclick="logout(event)">Logout</a>
     </div>
   ` + "`" + `;
@@ -96,6 +97,113 @@ function getUserName(){
     return user.account.username;
   }
   return '';
+}
+function getSettings(callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/user/me', config)
+  .then(function (response) {
+    callback(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error});
+  })
+}
+
+function createDomain(data, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.post(API_URL + '/domains', data, config)
+  .then(function (response) {
+    callback(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error});
+  })
+}
+
+function deleteDomain(data, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.delete(API_URL + '/domains/' + data, config)
+  .then(function (response) {
+    callback(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error});
+  })
+}
+
+function deleteFile(data, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.delete(API_URL + '/files/' + data, config)
+  .then(function (response) {
+    callback(response.data);
+  })
+  .catch(function (error) {
+    callback({status: false, message: error});
+  })
+}
+
+
+
+
+/**
+ * RegExps.
+ * A URL must match #1 and then at least one of #2/#3.
+ * Use two levels of REs to avoid REDOS.
+ */
+// Credits https://github.com/segmentio/is-url/blob/master/index.js
+var protocolAndDomainRE = /^(?:\w+:)?\/\/(\S+)$/;
+
+var localhostDomainRE = /^localhost[\:?\d]*(?:[^\:?\d]\S*)?$/
+var nonLocalhostDomainRE = /^[^\s\.]+\.\S{2,}$/;
+
+/**
+ * Loosely validate a URL ` + "`" + `string` + "`" + `.
+ *
+ * @param {String} string
+ * @return {Boolean}
+ */
+
+function isUrl(string){
+  if (typeof string !== 'string') {
+    return false;
+  }
+
+  var match = string.match(protocolAndDomainRE);
+  if (!match) {
+    return false;
+  }
+
+  var everythingAfterProtocol = match[1];
+  if (!everythingAfterProtocol) {
+    return false;
+  }
+
+  if (localhostDomainRE.test(everythingAfterProtocol) ||
+      nonLocalhostDomainRE.test(everythingAfterProtocol)) {
+    return true;
+  }
+
+  return false;
 }
 </script>
 `)
@@ -160,9 +268,9 @@ function getUserName(){
     top: 0;
     background-color: #fafafa;
   }
-  .bd-side-background{
+  /* .bd-side-background{
     background-color: white;
-  }
+  } */
   @media screen and (max-width:1087px) {
      .bd-lead,.bd-side {
       padding:1.5rem
@@ -216,6 +324,33 @@ function getUserName(){
   flex:0 0 calc(10.5rem + 1.5rem);
  }
 }
+.navbar{
+    background-color: #142c5d;
+}
+.navbar a{
+  color: #d2d2d2;
+  font-weight: bold;
+}
+.navbar a:first-child {
+  color: white;
+}
+.navbar a:first-child:hover {
+  background-color: transparent;
+}
+.navbar a:last-child {
+  /*color: white;*/
+  /*text-decoration: underline;*/
+}
+.navbar a:last-child:hover {
+  color:  #142c5d;
+}
+.nav-top-left {
+  color: white;
+}
+.nav-top-left #logout {
+  color: white;
+  font-weight: bold;
+}
 </style>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -256,6 +391,9 @@ function getUserName(){
 </div>
 <div id="navbarBasicExample" class="navbar-menu">
 <div class="navbar-start">
+  <a class="navbar-item">
+    imgserver
+   </a>
   <a class="navbar-item" href="/">
     Home
   </a>
@@ -378,12 +516,12 @@ function getUserName(){
                               <input id="password" class="input is-large" type="password" placeholder="Your Password">
                           </div>
                       </div>
-                      <div class="field">
+                      <!-- <div class="field">
                           <label class="checkbox">
             <input type="checkbox">
             Remember me
           </label>
-                      </div>
+                      </div> -->
                       <button id="submit" class="button is-block is-info is-large is-fullwidth">Log in</button>
                   </form>
               </div>

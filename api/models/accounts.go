@@ -56,7 +56,7 @@ func (account *User) Validate() (map[string]interface{}, bool) {
 		return u.Message(false, "Password is required"), false
 	}
 
-	//Email must be unique
+	// Email must be unique
 	temp := &User{}
 
 	//check for errors and duplicate emails

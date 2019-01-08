@@ -3,8 +3,16 @@
 <script>
     var userName = getUserName();
 
-    function fileMasterOnClick(e, t) {
+    function noVersionToSeeView() {
+      var nvtsView = `
+        <div class="notification">
+          There's no version of  this file. <a href="/documentation/modify-image" target="blank">Check this document to see how to modify uploaded images.</a>
+        </div>
+        `;
+      document.querySelector('#dashboard-content').innerHTML = nvtsView;
+    }
 
+    function fileMasterOnClick(e, t) {
       e.preventDefault();
       page = 1;
       if(t === 0){
@@ -23,12 +31,8 @@
           return;
         }
         if (response.status && !response.data.length){
-          var nothingToSeeView = `
-          <div class="notification">
-            There's no version of  this file. <a href="/documentation/modify-image" target="blank">Check this document to see how to modify uploaded images.</a>
-          </div>
-        `;
-          document.querySelector('#dashboard-content').innerHTML = nothingToSeeView;
+
+          noVersionToSeeView();
           return;
         }
 
@@ -70,23 +74,23 @@
 
     function createItem(item, userName){
       return `
-          <tr>
+          <tr id="tr-${item.ID}">
             <td><a id="${item.ID}" onclick="fileMasterOnClick(event, 0)">${item.name}</a></td>
             <td>${item.CreatedAt}</td>
             <td><a class="button is-text" target="_blank" href="${IMGSERVER_URL}/user/${userName}/resource/${item.name}">View</a></td>
-            <td><a class="button is-text" style="background: white; color:#ff3860">Delete</a></td>
+            <td><a id="${item.ID}" onclick="deleteRow(event)" class="button is-text" style="background: white; color:#ff3860">Delete</a></td>
           </tr>
           `
     }
 
     function createVersionItem(item, userName){
       return `
-          <tr>
+          <tr id="tr-${item.ID}">
             <td>${item.name}</td>
             <td>${item.operations}</td>
             <td>${item.CreatedAt}</td>
             <td><a class="button is-text" target="_blank" href="${IMGSERVER_URL}/user/${userName}/modifiers/${item.operations}/resource/${item.name}">View</a></td>
-            <td><a class="button is-text" style="background: white; color:#ff3860">Delete</a></td>
+            <td><a id="${item.ID}" onclick="deleteRow(event)" class="button is-text" style="background: white; color:#ff3860">Delete</a></td>
           </tr>
           `
     }
@@ -132,7 +136,14 @@
 
         })
     }
-
+    function nothingToSeeView(){
+      var ntsview = `
+      <div class="notification">
+        Bucket is empty. <a href="/documentation/upload-image" target="blank">Check this document to see how to upload images.</a>
+      </div>
+    `;
+      document.querySelector('#dashboard-content').innerHTML = ntsview;
+    }
     document.addEventListener('DOMContentLoaded', function() {
 
       var li = document.createElement('li');
@@ -146,12 +157,7 @@
         }
 
         if (page == 1 && response.status && !response.data.length){
-          var nothingToSeeView = `
-          <div class="notification">
-            Bucket is empty. <a href="/documentation/upload-image" target="blank">Check this document to see how to upload images.</a>
-          </div>
-        `;
-          document.querySelector('#dashboard-content').innerHTML = nothingToSeeView;
+          nothingToSeeView();
           return;
         }
         var itemsListView = ``;
@@ -174,7 +180,63 @@
       document.querySelector('#dashboard-content').innerHTML = listView;
       })
     })
+    var deleteTargetId = 0;
+    function deleteRow(e) {
+      deleteTargetId = 0;
+        // displayNoDataView();
+        deleteTargetId = e.target.id;
+        document.querySelector('.modal').classList.add('is-active');
+    }
+    function closeConfirmModal(e){
+      e.preventDefault();
+      document.querySelector('.modal').classList.remove('is-active')
+    }
+    function deleteConfirm(e){
+      e.preventDefault();
+      e.target.classList.add('is-loading')
+      deleteFile(deleteTargetId, function(response){
+
+        if (response.status){
+            document.getElementById("tr-" + deleteTargetId).remove();
+
+            var countRows = document.querySelectorAll("table tr").length
+            if (countRows === 0) {
+             var depth = document.querySelectorAll(".breadcrumb li").length
+             if (depth == 2){
+               nothingToSeeView();
+             } else {
+               noVersionToSeeView();
+             }
+            }
+            deleteTargetId = 0;
+        }
+        else {
+          displayError(response.message);
+        }
+        e.target.classList.remove('is-loading');
+        document.querySelector('.modal').classList.remove('is-active');
+      })
+    }
 </script>
+<div class="modal">
+  <div class="modal-background"></div>
+  <div class="modal-content">
+    <article class="message">
+      <article class="message is-danger">
+        <div class="message-header">
+          <p>Warning</p>
+          <button class="delete" aria-label="delete"></button>
+        </div>
+        <div class="message-body">
+          <p>Are you sure you want to delete?</p>
+          <br/>
+          <a class="button is-white" onclick="closeConfirmModal(event)">Cancel</a>
+          <a class="button is-danger" onclick="deleteConfirm(event)">Confirm</a>
+        </div>
+      </article>
+  </div>
+  <button class="modal-close is-large" aria-label="close" onclick="closeConfirmModal(event)"></button>
+</div>
 <p class="title">
   Uploaded images
 </p>
