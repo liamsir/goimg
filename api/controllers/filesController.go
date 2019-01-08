@@ -97,7 +97,9 @@ var DeleteFile = func(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		u.Respond(w, resp)
 		return
 	}
-	err = imageserver.DeleteFiles(filesToDelete)
+	masterIds := models.GetMasterHashForVersionIds(int(user), id)
+	fmt.Println("masterIds", masterIds)
+	err = imageserver.DeleteFiles(filesToDelete, masterIds)
 	if err != nil {
 		resp := u.Message(false, err.Error())
 		u.Respond(w, resp)

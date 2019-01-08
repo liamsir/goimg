@@ -21,10 +21,11 @@ func extractResourceFromRequestURI(r string) string {
 func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	debugMode := false
+	fmt.Println("r.Referer() ", r.Referer())
+
 	if r.Referer() == "" {
 		debugMode = true
 	}
-
 	paramUser := ps.ByName("user")
 	paramModifiers := ps.ByName("modifiers")
 	paramResource := extractResourceFromRequestURI(r.RequestURI) //ps.ByName("resource")[1:]

@@ -48,7 +48,7 @@ func SaveObject(object FileObject) {
 	fmt.Println("done writing file")
 }
 
-func DeleteFiles(files []*models.File) error {
+func DeleteFiles(files []*models.File, masterIds map[int]*models.File) error {
 	bucketName := "imgmdf"
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx, option.WithCredentialsFile("MyProject-89e0f34eb7a6.json"))
@@ -56,12 +56,13 @@ func DeleteFiles(files []*models.File) error {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 	var d []string
+	fmt.Println("files to delete", files)
 	for i := 0; i < len(files); i += 1 {
 		f := files[i]
-		o := fmt.Sprintf("%d/%s", f.UserId, f.Hash)
+		prefix := fmt.Sprintf("%d/%s", f.UserId, f.Hash)
 
 		if f.Type == 0 {
-			q := storage.Query{Prefix: o}
+			q := storage.Query{Prefix: prefix}
 			o := client.Bucket(bucketName).Objects(ctx, &q)
 			for {
 				ob, err := o.Next()
@@ -73,9 +74,13 @@ func DeleteFiles(files []*models.File) error {
 				}
 				d = append(d, ob.Name)
 			}
-
+			d = append(d, prefix)
+		} else if f.Type == 1 {
+			if master, ok := masterIds[int(f.MasterId)]; ok {
+				o := fmt.Sprintf("%d/%s_/%s", f.UserId, master.Hash, f.Hash)
+				d = append(d, o)
+			}
 		}
-		d = append(d, o)
 	}
 
 	for j := 0; j < len(d); j += 1 {

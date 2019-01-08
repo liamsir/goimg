@@ -171,6 +171,29 @@ func GetFilesForIds(userId int, files string) []*File {
 	return filesSlice
 }
 
+func GetMasterHashForVersionIds(userId int, files string) map[int]*File {
+
+	fileIds := []int{}
+	for _, i := range strings.Split(files, ",") {
+		j, err := strconv.Atoi(i)
+		if err != nil {
+			panic(err)
+		}
+		fileIds = append(fileIds, j)
+	}
+	filesSlice := make([]*File, 0)
+	err := GetDB().Table("files").Where("id IN(select master_id from files where id IN(?) AND user_id = ?) AND user_id = ?", fileIds, userId, userId).Find(&filesSlice).Error
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	result := make(map[int]*File)
+	for _, element := range filesSlice {
+		result[int(element.ID)] = element
+	}
+	return result
+}
+
 func GetFilesForHash(master string, version string, username string) []*File {
 	fmt.Println(master)
 	fmt.Println(version)

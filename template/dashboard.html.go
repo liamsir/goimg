@@ -509,7 +509,7 @@ if (!Cookies.get('user')){
           <tr id="tr-${item.ID}">
             <td><a id="${item.ID}" onclick="fileMasterOnClick(event, 0)">${item.name}</a></td>
             <td>${item.CreatedAt}</td>
-            <td><a class="button is-text" target="_blank" href="${IMGSERVER_URL}/user/${userName}/resource/${item.name}">View</a></td>
+            <td><a class="button is-text" target="_blank" rel="noreferrer" href="${IMGSERVER_URL}/user/${userName}/resource/${item.name}">View</a></td>
             <td><a id="${item.ID}" onclick="deleteRow(event)" class="button is-text" style="background: white; color:#ff3860">Delete</a></td>
           </tr>
           ` + "`" + `
