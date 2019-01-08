@@ -1,6 +1,7 @@
 <%: func LoginIndex(buffer *bytes.Buffer) %>
 
 <%+ "layout_start.html" %>
+<script src='https://www.google.com/recaptcha/api.js'></script>
 <script>
 
   if (Cookies.get('user')){
@@ -66,7 +67,7 @@
 
       if (email.value.length && password.value.length && validateEmail(email.value)) {
         submitButton.classList.add('is-loading')
-        submitLogin({ email: email.value, password: password.value }, function(data){
+        submitLogin({ email: email.value, password: password.value }, grecaptcha.getResponse(), function(data){
           submitButton.classList.remove('is-loading')
           if (data.status) {
             Cookies.set('user', data);
@@ -78,8 +79,11 @@
               }
               let err = createError(data.message);
               form.appendChild(err);
+              grecaptcha.reset()
           }
         });
+      } else {
+        grecaptcha.reset()
       }
     }
   })
@@ -108,6 +112,12 @@
             Remember me
           </label>
                       </div> -->
+                      <div class="field">
+                          <div class="control" style="text-align: center;">
+                            <div class="g-recaptcha" data-sitekey="6LfzCYgUAAAAAPZ651Vclnhq-ZGNZOPLs0GKIrDF" style="display: inline-block;">
+                            </div>
+                          </div>
+                      </div>
                       <button id="submit" class="button is-block is-info is-large is-fullwidth">Log in</button>
                   </form>
               </div>

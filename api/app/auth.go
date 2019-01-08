@@ -26,6 +26,7 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 			"/dashboard/settings":           true,
 			"/api/user/new":                 true,
 			"/api/user/login":               true,
+			"/api/user/login/grecaptcha":    true,
 			"/healthz":                      true,
 			"/api/signUrl":                  true,
 			"/api/accounts/forogotpassword": true,
@@ -45,6 +46,10 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 		}
 
 		if len(r.URL.Path) >= 12 && r.URL.Path[0:12] == "/api/upload/" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if len(r.URL.Path) >= 26 && r.URL.Path[0:26] == "/api/user/login/grecaptcha" {
 			next.ServeHTTP(w, r)
 			return
 		}

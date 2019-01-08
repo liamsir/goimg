@@ -30,7 +30,7 @@ func main() {
 
 	//Account
 	router.POST("/api/user/new", controllers.CreateAccount)
-	router.POST("/api/user/login", controllers.Authenticate)
+	router.POST("/api/user/login/grecaptcha/:grecaptcha", controllers.Authenticate)
 	router.POST("/api/user/login/refresh-token", controllers.AuthenticateWithRefreshToken)
 	router.GET("/api/user/me", controllers.GetUserProfile)
 	router.POST("/api/accounts/forogotpassword", controllers.ForgotPassword)

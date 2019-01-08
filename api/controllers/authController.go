@@ -9,8 +9,14 @@ import (
 	"time"
 
 	"github.com/dchest/passwordreset"
+	recaptcha "github.com/dpapathanasiou/go-recaptcha"
 	"github.com/julienschmidt/httprouter"
+	"github.com/tomasen/realip"
 )
+
+func init() {
+	recaptcha.Init("6LfzCYgUAAAAAOIi_gUzVvhMA52WmFIgrJ-Mz3fB")
+}
 
 var CreateAccount = func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
@@ -36,7 +42,21 @@ var GetUserProfile = func(w http.ResponseWriter, r *http.Request, ps httprouter.
 	u.Respond(w, resp)
 }
 
-var Authenticate = func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+var Authenticate = func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	grecaptcha := p.ByName("grecaptcha")
+
+	if grecaptcha == "" || grecaptcha == "-1" {
+		fmt.Println("sdfsdf")
+		u.Respond(w, u.Message(false, "Missing CAPTCHA token."))
+		return
+	}
+	clientIP := realip.FromRequest(r)
+	result, errr := recaptcha.Confirm(clientIP, grecaptcha)
+	if errr != nil || !result {
+		u.Respond(w, u.Message(false, "Invalid CAPTCHA token."))
+		return
+	}
 
 	account := &models.User{}
 	err := json.NewDecoder(r.Body).Decode(account) //decode the request body into struct and failed if any error occur

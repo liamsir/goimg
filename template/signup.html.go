@@ -18,10 +18,13 @@ func SignUpIndex(buffer *bytes.Buffer) {
     <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
     `)
 	buffer.WriteString(`<script>
+
 var IMGSERVER_URL = 'http://localhost:3001'
 var API_URL = 'http://localhost:3001/api'
-function submitLogin(data, callback) {
-  axios.post(API_URL + '/user/login', data)
+
+function submitLogin(data, grecaptcha, callback) {
+  grecaptcha = grecaptcha ? grecaptcha : "-1"
+  axios.post(API_URL + '/user/login/grecaptcha/' + grecaptcha, data)
   .then(function (response) {
     callback(response.data)
     console.log(response.data);
@@ -53,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
       Log in
     </a>
   ` + "`" + `
-  if (Cookies.get('user')){
+  if (Cookies.get('user')) {
     document.querySelector('.nav-top-left').innerHTML = userView;
     let logout = document.querySelector("#logout");
   } else {
@@ -426,6 +429,11 @@ function isUrl(string){
                   <form>
                       <div class="field">
                           <div class="control">
+                              <input class="input is-large" type="text" placeholder="Your Account Name" autofocus="">
+                          </div>
+                      </div>
+                      <div class="field">
+                          <div class="control">
                               <input class="input is-large" type="email" placeholder="Your Email" autofocus="">
                           </div>
                       </div>
@@ -433,12 +441,6 @@ function isUrl(string){
                           <div class="control">
                               <input class="input is-large" type="password" placeholder="Your Password">
                           </div>
-                      </div>
-                      <div class="field">
-                          <label class="checkbox">
-            <input type="checkbox">
-            Remember me
-          </label>
                       </div>
                       <button class="button is-block is-info is-large is-fullwidth">Register</button>
                   </form>

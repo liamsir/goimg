@@ -18,10 +18,13 @@ func LoginIndex(buffer *bytes.Buffer) {
     <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
     `)
 	buffer.WriteString(`<script>
+
 var IMGSERVER_URL = 'http://localhost:3001'
 var API_URL = 'http://localhost:3001/api'
-function submitLogin(data, callback) {
-  axios.post(API_URL + '/user/login', data)
+
+function submitLogin(data, grecaptcha, callback) {
+  grecaptcha = grecaptcha ? grecaptcha : "-1"
+  axios.post(API_URL + '/user/login/grecaptcha/' + grecaptcha, data)
   .then(function (response) {
     callback(response.data)
     console.log(response.data);
@@ -53,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
       Log in
     </a>
   ` + "`" + `
-  if (Cookies.get('user')){
+  if (Cookies.get('user')) {
     document.querySelector('.nav-top-left').innerHTML = userView;
     let logout = document.querySelector("#logout");
   } else {
@@ -415,6 +418,7 @@ function isUrl(string){
 </nav>
 `)
 	buffer.WriteString(`
+<script src='https://www.google.com/recaptcha/api.js'></script>
 <script>
 
   if (Cookies.get('user')){
@@ -480,7 +484,7 @@ function isUrl(string){
 
       if (email.value.length && password.value.length && validateEmail(email.value)) {
         submitButton.classList.add('is-loading')
-        submitLogin({ email: email.value, password: password.value }, function(data){
+        submitLogin({ email: email.value, password: password.value }, grecaptcha.getResponse(), function(data){
           submitButton.classList.remove('is-loading')
           if (data.status) {
             Cookies.set('user', data);
@@ -492,8 +496,11 @@ function isUrl(string){
               }
               let err = createError(data.message);
               form.appendChild(err);
+              grecaptcha.reset()
           }
         });
+      } else {
+        grecaptcha.reset()
       }
     }
   })
@@ -522,6 +529,12 @@ function isUrl(string){
             Remember me
           </label>
                       </div> -->
+                      <div class="field">
+                          <div class="control" style="text-align: center;">
+                            <div class="g-recaptcha" data-sitekey="6LfzCYgUAAAAAPZ651Vclnhq-ZGNZOPLs0GKIrDF" style="display: inline-block;">
+                            </div>
+                          </div>
+                      </div>
                       <button id="submit" class="button is-block is-info is-large is-fullwidth">Log in</button>
                   </form>
               </div>

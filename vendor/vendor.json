@@ -63,6 +63,12 @@
 			"revisionTime": "2018-09-21T17:23:15Z"
 		},
 		{
+			"checksumSHA1": "uzRSsopMuhU83NWbcrWtoAljXf0=",
+			"path": "github.com/dpapathanasiou/go-recaptcha",
+			"revision": "0e9736be20f9b0ca229b8f5eaf8305858a160994",
+			"revisionTime": "2018-03-30T23:13:21Z"
+		},
+		{
 			"checksumSHA1": "Y2MOwzNZfl4NRNDbLCZa6sgx7O0=",
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "1d3f30b51784bec5aad268e59fd3c2fc1c2fe73f",
