@@ -304,8 +304,8 @@ func validateSignature(params ValidateSignatureParams) (bool, error) {
 
 	expectedSign := h.Sum(nil)
 	urlSign, err := base64.RawURLEncoding.DecodeString(params.Signature)
-
 	if err != nil {
+		fmt.Println(err)
 		return false, err
 	}
 

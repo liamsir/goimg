@@ -530,7 +530,7 @@ if (!Cookies.get('user')){
     <div class="field">
     <label class="label">Secret Key</label>
     <div class="control">
-      <input type="hidden" id="secret_key" value=${data.data.secret_key}/>
+      <input type="hidden" id="secret_key" value="${data.data.secret_key}" />
       <p id="secret-key-label">${new Array(data.data.secret_key.length + 1).join( "*")}</p>
       <a class="button" onclick="revealSecretKey(event)">Reveal</a>
     </div>

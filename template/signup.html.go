@@ -549,7 +549,6 @@ function isUrl(string){
         if (accountName.value.length && email.value.length && password.value.length && validateEmail(email.value)) {
           submitButton.classList.add('is-loading')
           submitCreateAccount({ email: email.value, username: accountName.value, password: password.value }, grecaptcha.getResponse(), function(data){
-            submitButton.classList.remove('is-loading')
             if (data.status) {
               Cookies.set('user', data);
               window.location.replace("/dashboard");
@@ -561,6 +560,7 @@ function isUrl(string){
                 let err = createError(data.message);
                 form.appendChild(err);
                 grecaptcha.reset()
+                submitButton.classList.remove('is-loading')
             }
           });
       }
