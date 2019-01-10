@@ -20,10 +20,8 @@ func SettingsIndex(buffer *bytes.Buffer) {
 	buffer.WriteString(`<script>
 
 // var IMGSERVER_URL = 'http://localhost:3001'
-// var API_URL = 'http://localhost:3001/api'
-
+var API_URL = '/api'
 var IMGSERVER_URL = 'http://imgserver-testing.herokuapp.com'
-var API_URL = 'http://imgserver-testing.herokuapp.com/api'
 
 function validateEmail(email) {
   var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
