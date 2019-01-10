@@ -74,7 +74,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		servedOriginalImage, e := serveOriginalImage(resource, w, r, usageStats, debugMode)
 		if e != nil || servedOriginalImage {
 			logRequest(requestEntity{
-				Body:   "",
+				Body:   resource[0].Name,
 				FileId: int(resource[0].ID),
 				UserId: int(resource[0].UserId),
 				Type:   1,
@@ -172,7 +172,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	logRequest(requestEntity{
-		Body:   paramModifiers,
+		Body:   resource[0].Name + "/" + paramModifiers,
 		FileId: fileId,
 		UserId: userId,
 		Type:   3,

@@ -53,6 +53,10 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
+		if len(r.URL.Path) >= 24 && r.URL.Path[0:24] == "/api/user/new/grecaptcha" {
+			next.ServeHTTP(w, r)
+			return
+		}
 
 		response := make(map[string]interface{})
 		tokenHeader := r.Header.Get("Authorization") //Grab the token from the header

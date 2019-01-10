@@ -19,9 +19,16 @@ func MetricsIndex(buffer *bytes.Buffer) {
     `)
 	buffer.WriteString(`<script>
 
-var IMGSERVER_URL = 'http://localhost:3001'
-var API_URL = 'http://localhost:3001/api'
+// var IMGSERVER_URL = 'http://localhost:3001'
+// var API_URL = 'http://localhost:3001/api'
 
+var IMGSERVER_URL = 'http://imgserver-testing.herokuapp.com'
+var API_URL = 'http://imgserver-testing.herokuapp.com/api'
+
+function validateEmail(email) {
+  var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return re.test(String(email).toLowerCase());
+}
 function submitLogin(data, grecaptcha, callback) {
   grecaptcha = grecaptcha ? grecaptcha : "-1"
   axios.post(API_URL + '/user/login/grecaptcha/' + grecaptcha, data)
@@ -33,6 +40,18 @@ function submitLogin(data, grecaptcha, callback) {
     callback({status: false, message: error})
   })
 }
+
+function submitCreateAccount(data, grecaptcha, callback) {
+  grecaptcha = grecaptcha ? grecaptcha : "-1"
+  axios.post(API_URL + '/user/new/grecaptcha/' + grecaptcha, data)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
+
 function logout(e){
   e.preventDefault();
   Cookies.remove('user');
@@ -165,6 +184,37 @@ function deleteFile(data, callback) {
   })
 }
 
+function getLogsForPage(start, end, page, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/reports/logs/start/'+start+'/end/'+end+'/page/' + page, config)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
+
+function getReportFor(start, end, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/reports/start/'+start+'/end/'+end, config)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
 
 
 
@@ -450,59 +500,156 @@ if (!Cookies.get('user')){
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script>
 
+var chart;
+var options = {
+  height: 500,
+  chartArea: {width: '80%', height: '80%'},
+  hAxis: {
+      gridlines: {
+          color: 'transparent'
+      },
+  },
+  vAxis: {
+      gridlines: {
+          color: '#f0f0f0'
+      },
+      minorGridlines: {
+        color: 'transparent'
+      }
+  },
+  lineWidth: 4,
+  colors: ['#3273dc', '#b9c246', 'red', 'orange']
+};
+
+var startDate = "2018-12-09"
+var endDate = "2019-01-10"
+
 document.addEventListener('DOMContentLoaded', function() {
+  getLogs();
   var li = document.createElement('li');
   li.innerHTML = '<a href="/metrics">Metrics</a>'
   document.querySelector('.breadcrumb ul').appendChild(li);
+
+  var startDateInput = document.getElementById("startDate")
+  var endDateInput = document.getElementById("endDate")
+  startDateInput.value = startDate;
+  endDateInput.value = endDate;
+
+  startDateInput.onchange = function(e){
+    startDate = e.target.value;
+    endDate = endDateInput.value;
+    getMetrics()
+    getLogs();
+  }
+
 });
 
 google.charts.load('current', {packages: ['corechart', 'line']});
 google.charts.setOnLoadCallback(drawBasic);
 
 function drawBasic() {
-
       var data = new google.visualization.DataTable();
       data.addColumn('date', 'Data');
-      data.addColumn('number', 'Requests');
-      data.addColumn('number', 'Image edits');
-
-      data.addRows([
-        [new Date(2019, 3, 1), 123, 5],
-        [new Date(2019, 4, 1), 150, 6],
-        [new Date(2019, 5, 1), 160, 7],
-        [new Date(2019, 7, 1), 140, 8],
-        [new Date(2019, 8, 1), 280, 12],
-      ]);
-
-      var options = {
-        height: 500,
-        chartArea: {width: '80%', height: '80%'},
-        hAxis: {
-            gridlines: {
-                color: 'transparent'
-            },
-        },
-        vAxis: {
-            gridlines: {
-                color: '#f0f0f0'
-            },
-            minorGridlines: {
-              color: 'transparent'
-            }
-        },
-        lineWidth: 4,
-        colors: ['#3273dc', '#b9c246']
-      };
-
-      var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-
+      data.addColumn('number', 'Served from cache');
+      data.addColumn('number', 'Served original image');
+      data.addColumn('number', 'Download resource and save in blob');
+      data.addColumn('number', 'Operation performed');
+      chart = new google.visualization.LineChart(document.getElementById('chart_div'));
       chart.draw(data, options);
+
+      getMetrics();
+    }
+    function getMetrics(){
+      getReportFor(startDate, endDate, function(response) {
+
+        var data = new google.visualization.DataTable();
+        data.addColumn('date', 'Data');
+        data.addColumn('number', 'Served from cache');
+        data.addColumn('number', 'Served original image');
+        data.addColumn('number', 'Download resource and save in blob');
+        data.addColumn('number', 'Operation performed');
+
+        var items = {}
+        var rows = [];
+        for (var i = 0; i < response.data.length; i+=1) {
+          var item = response.data[i];
+          if (!items[item.created_at]) {
+            items[item.created_at] = {0: 0, 1: 0, 2: 0, 3:0}
+          }
+          items[item.created_at][item.type] = item.total;
+        }
+
+        for (var key in items) {
+          var v = items[key]
+          rows.push([new Date(key), v["0"], v["1"], v["2"], v["3"]]);
+        }
+        data.addRows(rows);
+        chart.draw(data, options)
+      });
+
+      // data.addRows([
+      //   [new Date(2019, 3, 1), 123, 5],
+      //   [new Date(2019, 4, 1), 150, 6],
+      //   [new Date(2019, 5, 1), 160, 7],
+      //   [new Date(2019, 7, 1), 140, 8],
+      //   [new Date(2019, 8, 1), 280, 12],
+      // ]);
+    }
+
+    function createRowElement(item) {
+      return ` + "`" + `
+        <tr>
+          <td>${item.name}</td>
+          <td>${item.CreatedAt}</td>
+          <td>${item.type}</td>
+        </tr>
+      ` + "`" + `
+    }
+    function getLogs(){
+      getLogsForPage(startDate, endDate, 1, function(data){
+        var rows = '';
+        for (var i = 0; i < data.logs.length; i += 1) {
+          rows += createRowElement(data.logs[i]);
+        }
+        var logsView = ` + "`" + `
+        <label class="label">20 most recent logs</label>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>File name</th>
+              <th>Time</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+          ${rows}
+        </tbody>
+        </table>
+        ` + "`" + `
+        document.getElementById("logs").innerHTML = logsView
+      })
     }
 </script>
 <p class="title">
   Overview
 </p>
   <hr style="margin: 0 0 3rem;">
+  <div class="columns">
+  <div class="column">
+    <div class="field">
+    <div class="control">
+      <input id="startDate" class="input" type="text" placeholder="From" value="">
+    </div>
+  </div>
+  </div>
+  <div class="column">
+    <div class="field">
+    <div class="control">
+      <input id="endDate" class="input" type="text" placeholder="To" value="">
+    </div>
+  </div>
+  </div>
+</div>
 <div class="row">
   <div class="clearfix"></div>
   <div class="col-md-6">
@@ -514,33 +661,10 @@ function drawBasic() {
 <p class="title">
   Logs
 </p>
-<hr style="margin: 0 0 3rem;">
-<table class="table">
-  <thead>
-    <tr>
-      <th>File name</th>
-      <th>Time</th>
-      <th>Type</th>
-    </tr>
-  </thead>
-  <tbody>
-  <tr>
-    <td>16521230968_5cbd96f727_h.jpeg</td>
-    <td>2019-01-06T14:29:27</td>
-    <td>Fetched from cache</td>
-  </tr>
-  <tr>
-    <td>nyc.jpg</td>
-    <td>2019-01-06T14:29:27</td>
-    <td>Fetched from cache</td>
-  </tr>
-  <tr>
-    <td>resize=width:1400,height:700/nyc.jpg</td>
-    <td>2019-01-06T14:29:27</td>
-    <td>Fetched from cache</td>
-  </tr>
-</tbody>
-</table>
+<hr style="margin: 0 0 3rem;" >
+<div id="logs">
+  <a style="border: 0;" class="button is-loading is-fullwidth is-large">Loading</a>
+</div>
 `)
 	buffer.WriteString(`</div>
 <aside class="bd-side">

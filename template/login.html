@@ -12,10 +12,7 @@
     if (Cookies.get('user')){
       return;
     }
-    function validateEmail(email) {
-      var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-      return re.test(String(email).toLowerCase());
-    }
+
     function createError(err){
       let paragraph = document.createElement("p");
       let text = document.createTextNode(err ? err : "This field is required!");
@@ -65,24 +62,25 @@
         }
       }
 
-      if (email.value.length && password.value.length && validateEmail(email.value)) {
-        submitButton.classList.add('is-loading')
-        submitLogin({ email: email.value, password: password.value }, grecaptcha.getResponse(), function(data){
-          submitButton.classList.remove('is-loading')
-          if (data.status) {
-            Cookies.set('user', data);
-            window.location.replace("/dashboard");
-          } else {
-              let prevErr = form.querySelector('p.is-danger');
-              if (prevErr){
-                prevErr.remove();
-              }
-              let err = createError(data.message);
-              form.appendChild(err);
-              grecaptcha.reset()
-          }
-        });
-      } else {
+        if (email.value.length && password.value.length && validateEmail(email.value)) {
+          submitButton.classList.add('is-loading')
+          submitLogin({ email: email.value, password: password.value }, grecaptcha.getResponse(), function(data){
+            submitButton.classList.remove('is-loading')
+            if (data.status) {
+              Cookies.set('user', data);
+              window.location.replace("/dashboard");
+            } else {
+                let prevErr = form.querySelector('p.is-danger');
+                if (prevErr){
+                  prevErr.remove();
+                }
+                let err = createError(data.message);
+                form.appendChild(err);
+                grecaptcha.reset()
+            }
+          });
+      }
+      else {
         grecaptcha.reset()
       }
     }

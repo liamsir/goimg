@@ -19,9 +19,16 @@ func HomeIndex(buffer *bytes.Buffer) {
     `)
 	buffer.WriteString(`<script>
 
-var IMGSERVER_URL = 'http://localhost:3001'
-var API_URL = 'http://localhost:3001/api'
+// var IMGSERVER_URL = 'http://localhost:3001'
+// var API_URL = 'http://localhost:3001/api'
 
+var IMGSERVER_URL = 'http://imgserver-testing.herokuapp.com'
+var API_URL = 'http://imgserver-testing.herokuapp.com/api'
+
+function validateEmail(email) {
+  var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return re.test(String(email).toLowerCase());
+}
 function submitLogin(data, grecaptcha, callback) {
   grecaptcha = grecaptcha ? grecaptcha : "-1"
   axios.post(API_URL + '/user/login/grecaptcha/' + grecaptcha, data)
@@ -33,6 +40,18 @@ function submitLogin(data, grecaptcha, callback) {
     callback({status: false, message: error})
   })
 }
+
+function submitCreateAccount(data, grecaptcha, callback) {
+  grecaptcha = grecaptcha ? grecaptcha : "-1"
+  axios.post(API_URL + '/user/new/grecaptcha/' + grecaptcha, data)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
+
 function logout(e){
   e.preventDefault();
   Cookies.remove('user');
@@ -165,6 +184,37 @@ function deleteFile(data, callback) {
   })
 }
 
+function getLogsForPage(start, end, page, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/reports/logs/start/'+start+'/end/'+end+'/page/' + page, config)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
+
+function getReportFor(start, end, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/reports/start/'+start+'/end/'+end, config)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
 
 
 

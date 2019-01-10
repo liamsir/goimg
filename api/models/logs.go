@@ -4,7 +4,6 @@ import (
 	"fmt"
 	u "imgserver/api/utils"
 	"log"
-
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -73,7 +72,7 @@ func GetLogs(user uint, page uint, start time.Time, end time.Time) []*Log {
 	offset := (page - 1) * limit
 
 	logs := make([]*Log, 0)
-	err := GetDB().Table("logs").Offset(offset).Limit(limit).Where("user_id = ? AND created_at >= ? AND created_at < ?", user, start, end).Find(&logs).Error
+	err := GetDB().Table("logs").Order("created_at desc").Offset(offset).Limit(limit).Where("user_id = ? AND created_at >= ? AND created_at < ?", user, start, end).Find(&logs).Error
 	if err != nil {
 		fmt.Println(err)
 		return nil
@@ -101,31 +100,46 @@ func GetUsage(userId string) map[int]int {
 	return res
 }
 
-func GetReportFor(userId uint, start time.Time, end time.Time) map[string]interface{} {
-	res := make(map[string]interface{})
-	rows, err := GetDB().Table("logs").Where(`user_id = ? AND created_at >= ? AND created_at < ?`, userId, start, end).Select(`"type", count(*) as total`).Group("type").Rows()
+type LogGroup struct {
+	Type      uint      `json:"type"`
+	Total     uint      `json:"total"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func GetReportFor(userId uint, start time.Time, end time.Time) []*LogGroup {
+	res := make([]*LogGroup, 0)
+	err := GetDB().Table("logs").Where(`user_id = ? AND created_at >= ? AND created_at < ?`, userId, start, end).Select(`created_at::date as created_at, "type", count(*) as total`).Group("created_at::date, type").Order("created_at desc").Find(&res).Error
 	if err != nil {
 		return nil
 	}
-	for rows.Next() {
-		var (
-			requestType  int
-			requestCount int
-		)
-		err = rows.Scan(&requestType, &requestCount)
-		if err != nil {
-			log.Fatal(err)
-		}
-		data := struct {
-			RequestType  int
-			RequestCount int
-		}{
-			requestType,
-			requestCount,
-		}
-		res[fmt.Sprintf("%d", requestType)] = data
-	}
-	res["start"] = start
-	res["end"] = end
 	return res
 }
+
+// func GetReportFor(userId uint, start time.Time, end time.Time) map[string]interface{} {
+// 	res := make(map[string]interface{})
+// 	rows, err := GetDB().Table("logs").Where(`user_id = ? AND created_at >= ? AND created_at < ?`, userId, start, end).Select(`"type", count(*) as total`).Group("type").Rows()
+// 	if err != nil {
+// 		return nil
+// 	}
+// 	for rows.Next() {
+// 		var (
+// 			requestType  int
+// 			requestCount int
+// 		)
+// 		err = rows.Scan(&requestType, &requestCount)
+// 		if err != nil {
+// 			log.Fatal(err)
+// 		}
+// 		data := struct {
+// 			RequestType  int
+// 			RequestCount int
+// 		}{
+// 			requestType,
+// 			requestCount,
+// 		}
+// 		res[fmt.Sprintf("%d", requestType)] = data
+// 	}
+// 	res["start"] = start
+// 	res["end"] = end
+// 	return res
+// }

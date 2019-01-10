@@ -60,7 +60,7 @@ func (account *User) Validate() (map[string]interface{}, bool) {
 	temp := &User{}
 
 	//check for errors and duplicate emails
-	err := GetDB().Table("users").Where("email = ? || username = ?", account.Email, account.Username).First(temp).Error
+	err := GetDB().Table("users").Where("email = ? OR username = ?", account.Email, account.Username).First(temp).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return u.Message(false, "Connection error. Please retry"), false
 	}
@@ -83,7 +83,7 @@ func (account *User) UpdatePassword() map[string]interface{} {
 }
 
 func (account *User) Create() map[string]interface{} {
-
+	account.Username = strings.ToLower(account.Username)
 	if resp, ok := account.Validate(); !ok {
 		return resp
 	}

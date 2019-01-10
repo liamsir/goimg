@@ -14,7 +14,6 @@ import (
 var GetReportFor = func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	user := r.Context().Value("user").(uint)
-
 	startStr := ps.ByName("start")
 	endStr := ps.ByName("end")
 
@@ -24,9 +23,12 @@ var GetReportFor = func(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 		return
 	}
 
-	summary := models.GetReportFor(uint(user), start, end)
+	data := models.GetReportFor(uint(user), start, end)
 	resp := u.Message(true, "success")
-	resp["summary"] = summary
+	resp["data"] = data
+	resp["start"] = startStr
+	resp["end"] = endStr
+	//resp["summary"] = summary
 	u.Respond(w, resp)
 }
 

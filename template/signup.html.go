@@ -19,9 +19,16 @@ func SignUpIndex(buffer *bytes.Buffer) {
     `)
 	buffer.WriteString(`<script>
 
-var IMGSERVER_URL = 'http://localhost:3001'
-var API_URL = 'http://localhost:3001/api'
+// var IMGSERVER_URL = 'http://localhost:3001'
+// var API_URL = 'http://localhost:3001/api'
 
+var IMGSERVER_URL = 'http://imgserver-testing.herokuapp.com'
+var API_URL = 'http://imgserver-testing.herokuapp.com/api'
+
+function validateEmail(email) {
+  var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return re.test(String(email).toLowerCase());
+}
 function submitLogin(data, grecaptcha, callback) {
   grecaptcha = grecaptcha ? grecaptcha : "-1"
   axios.post(API_URL + '/user/login/grecaptcha/' + grecaptcha, data)
@@ -33,6 +40,18 @@ function submitLogin(data, grecaptcha, callback) {
     callback({status: false, message: error})
   })
 }
+
+function submitCreateAccount(data, grecaptcha, callback) {
+  grecaptcha = grecaptcha ? grecaptcha : "-1"
+  axios.post(API_URL + '/user/new/grecaptcha/' + grecaptcha, data)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
+
 function logout(e){
   e.preventDefault();
   Cookies.remove('user');
@@ -165,6 +184,37 @@ function deleteFile(data, callback) {
   })
 }
 
+function getLogsForPage(start, end, page, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/reports/logs/start/'+start+'/end/'+end+'/page/' + page, config)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
+
+function getReportFor(start, end, callback) {
+  var user = JSON.parse(Cookies.get('user'));
+  let config = {
+    headers: {
+      Authorization: 'Bearer ' + user.account.token,
+    }
+  }
+  axios.get(API_URL + '/reports/start/'+start+'/end/'+end, config)
+  .then(function (response) {
+    callback(response.data)
+  })
+  .catch(function (error) {
+    callback({status: false, message: error})
+  })
+}
 
 
 
@@ -418,6 +468,112 @@ function isUrl(string){
 </nav>
 `)
 	buffer.WriteString(`
+<script src='https://www.google.com/recaptcha/api.js'></script>
+<script>
+
+  if (Cookies.get('user')){
+    window.location.replace("/dashboard");
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    if (Cookies.get('user')){
+      return;
+    }
+    function createError(err){
+      let paragraph = document.createElement("p");
+      let text = document.createTextNode(err ? err : "This field is required!");
+      paragraph.appendChild(text);
+      paragraph.classList.add('help');
+      paragraph.classList.add('is-danger');
+      return paragraph;
+    }
+    let form = document.querySelector('#form')
+    let submitButton = form.querySelector("#submit");
+
+    submitButton.onclick = function (e) {
+      e.preventDefault();
+      var accountName = form.querySelector("#accountname");
+      var email = form.querySelector("#email");
+      var password = form.querySelector("#password");
+
+      if (!accountName.value.length || accountName.value.length < 6) {
+        accountName.classList.add('is-danger');
+        let accountNameControl = form.querySelector('.accountname-control');
+        let prevErr = accountNameControl.querySelector('p.is-danger');
+        if (prevErr){
+          prevErr.remove();
+        }
+        let err = createError();
+        accountNameControl.appendChild(err);
+        accountName.onfocus = function() {
+          accountName.classList.remove('is-danger');
+          if (err) {
+            err.remove();
+          }
+        }
+      }
+
+      if (!email.value.length || !validateEmail(email.value)) {
+        email.classList.add('is-danger');
+
+        let emailControl = form.querySelector('.email-control');
+        let prevErr = emailControl.querySelector('p.is-danger');
+        if (prevErr){
+          prevErr.remove();
+        }
+        let err = createError()
+        emailControl.appendChild(err);
+
+        email.onfocus = function() {
+          email.classList.remove('is-danger');
+          if (err){
+            err.remove();
+          }
+        }
+      }
+      if (!password.value.length || password.value.length < 6) {
+        password.classList.add('is-danger');
+        let pwdControl = form.querySelector('.password-control');
+        let prevErr = pwdControl.querySelector('p.is-danger');
+        if (prevErr){
+          prevErr.remove();
+        }
+        let err = createError();
+        pwdControl.appendChild(err);
+        password.onfocus = function() {
+          password.classList.remove('is-danger');
+          if (err){
+            err.remove();
+          }
+        }
+      }
+
+        if (accountName.value.length && email.value.length && password.value.length && validateEmail(email.value)) {
+          submitButton.classList.add('is-loading')
+          submitCreateAccount({ email: email.value, username: accountName.value, password: password.value }, grecaptcha.getResponse(), function(data){
+            submitButton.classList.remove('is-loading')
+            if (data.status) {
+              Cookies.set('user', data);
+              window.location.replace("/dashboard");
+            } else {
+                let prevErr = form.querySelector('p.is-danger');
+                if (prevErr){
+                  prevErr.remove();
+                }
+                let err = createError(data.message);
+                form.appendChild(err);
+                grecaptcha.reset()
+            }
+          });
+      }
+      else {
+        grecaptcha.reset()
+      }
+    }
+
+  });
+
+</script>
 
 <section class="hero">
   <div class="hero-body">
@@ -426,23 +582,29 @@ function isUrl(string){
               <h3 class="title">Sign up</h3>
               <p class="subtitle">Create new account.</p>
               <div class="box">
-                  <form>
+                  <form id="form">
                       <div class="field">
-                          <div class="control">
-                              <input class="input is-large" type="text" placeholder="Your Account Name" autofocus="">
+                          <div class="control accountname-control">
+                              <input id="accountname" class="input is-large" type="text" placeholder="Your Account Name" autofocus="">
                           </div>
                       </div>
                       <div class="field">
-                          <div class="control">
-                              <input class="input is-large" type="email" placeholder="Your Email" autofocus="">
+                          <div class="control email-control">
+                              <input id="email" class="input is-large" type="email" placeholder="Your Email" autofocus="">
                           </div>
                       </div>
                       <div class="field">
-                          <div class="control">
-                              <input class="input is-large" type="password" placeholder="Your Password">
+                          <div class="control password-control">
+                              <input id="password" class="input is-large" type="password" placeholder="Your Password">
                           </div>
                       </div>
-                      <button class="button is-block is-info is-large is-fullwidth">Register</button>
+                      <div class="field">
+                          <div class="control" style="text-align: center;">
+                            <div class="g-recaptcha" data-sitekey="6LfzCYgUAAAAAPZ651Vclnhq-ZGNZOPLs0GKIrDF" style="display: inline-block;">
+                            </div>
+                          </div>
+                      </div>
+                      <button id="submit"  class="button is-block is-info is-large is-fullwidth">Register</button>
                   </form>
               </div>
               <p class="has-text-grey">

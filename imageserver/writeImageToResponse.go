@@ -58,7 +58,7 @@ func serveImageFromCache(resource map[uint]models.File, w http.ResponseWriter, r
 		}
 
 		logRequest(requestEntity{
-			Body:   "",
+			Body:   resource[0].Name + "/" + resource[1].Name,
 			FileId: int(resource[1].ID),
 			UserId: int(resource[1].UserId),
 			Type:   0,
