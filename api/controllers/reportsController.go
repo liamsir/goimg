@@ -24,8 +24,24 @@ var GetReportFor = func(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	}
 
 	data := models.GetReportFor(uint(user), start, end)
+
+	stats := make(map[string]map[uint]uint)
+
+	s := time.Time(start)
+	e := time.Time(end).AddDate(0, 0, 1)
+
+	for s.Before(e) {
+		m := map[uint]uint{0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
+		stats[s.Format("2006-01-02")] = m
+		s = s.AddDate(0, 0, 1)
+	}
+
+	for _, item := range data {
+		stats[item.CreatedAt.Format("2006-01-02")][item.Type] = item.Total
+	}
+
 	resp := u.Message(true, "success")
-	resp["data"] = data
+	resp["data"] = stats
 	resp["start"] = startStr
 	resp["end"] = endStr
 	//resp["summary"] = summary

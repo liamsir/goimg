@@ -108,7 +108,7 @@ type LogGroup struct {
 
 func GetReportFor(userId uint, start time.Time, end time.Time) []*LogGroup {
 	res := make([]*LogGroup, 0)
-	err := GetDB().Table("logs").Where(`user_id = ? AND created_at >= ? AND created_at < ?`, userId, start, end).Select(`created_at::date as created_at, "type", count(*) as total`).Group("created_at::date, type").Order("created_at desc").Find(&res).Error
+	err := GetDB().Table("logs").Where(`user_id = ? AND created_at >= ? AND created_at::date <= ?`, userId, start, end).Select(`created_at::date as created_at, "type", count(*) as total`).Group("created_at::date, type").Order("created_at desc").Find(&res).Error
 	if err != nil {
 		return nil
 	}

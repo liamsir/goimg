@@ -495,7 +495,7 @@ function isUrl(string){
     <li>Image metadata</li>
     </ul>
 </div>
-  <pre>
+  <!-- <pre>
     <code class="language-js">
     POST localhost:3000/user/ismajl/signUrl
     {
@@ -507,7 +507,8 @@ function isUrl(string){
       		"ContentLength": 1440239
       	}
     }
-  </code></pre>
+  </code></pre> -->
+  <script src="https://gist.github.com/liamsir/dfdb0bf69d78b6fbc39b85bc8b571925.js"></script>
 `)
 	buffer.WriteString(`        </div>
         <aside class="bd-side">

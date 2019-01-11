@@ -18,7 +18,7 @@
 var chart;
 var options = {
   height: 500,
-  chartArea: {width: '80%', height: '80%'},
+  //chartArea: {width: '80%', height: '80%'},
   hAxis: {
       gridlines: {
           color: 'transparent'
@@ -70,35 +70,42 @@ function drawBasic() {
       data.addColumn('number', 'Download resource and save in blob');
       data.addColumn('number', 'Operation performed');
       chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-      chart.draw(data, options);
-
+      google.visualization.events.addListener(chart, 'ready', function(){
+        //
+      });
+      //chart.draw(data, options);
       getMetrics();
     }
     function getMetrics(){
       getReportFor(startDate, endDate, function(response) {
+        try {
+          console.log(response)
+          var data = new google.visualization.DataTable();
+          data.addColumn('date', 'Data');
+          data.addColumn('number', 'Served from cache');
+          data.addColumn('number', 'Served original image');
+          data.addColumn('number', 'Download resource and save in blob');
+          data.addColumn('number', 'Operation performed');
+          data.addColumn('number', 'sdf');
 
-        var data = new google.visualization.DataTable();
-        data.addColumn('date', 'Data');
-        data.addColumn('number', 'Served from cache');
-        data.addColumn('number', 'Served original image');
-        data.addColumn('number', 'Download resource and save in blob');
-        data.addColumn('number', 'Operation performed');
+          var rows = [];
+          var items = response.data
 
-        var items = {}
-        var rows = [];
-        for (var i = 0; i < response.data.length; i+=1) {
-          var item = response.data[i];
-          if (!items[item.created_at]) {
-            items[item.created_at] = {0: 0, 1: 0, 2: 0, 3:0}
+          for (var key in items) {
+            try {
+              var v = items[key]
+              rows.push([new Date(key), v[0], v[1], v[2], v[3], v[4]]);
+            }catch(e){
+              // console.log(e)
+            }
+
           }
-          items[item.created_at][item.type] = item.total;
+          console.log(rows)
+          data.addRows(rows);
+        }catch(e){
+          console.log(e)
         }
 
-        for (var key in items) {
-          var v = items[key]
-          rows.push([new Date(key), v["0"], v["1"], v["2"], v["3"]]);
-        }
-        data.addRows(rows);
         chart.draw(data, options)
       });
 
