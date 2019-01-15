@@ -62,7 +62,6 @@ func parseModifiers(modifiers string) ([]imageOperation, error) {
 			}
 			newOperation.value[prmName] = int(v)
 		}
-		fmt.Println("newOperation", newOperation)
 		modifiersList = append(modifiersList, newOperation)
 	}
 

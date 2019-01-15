@@ -1,11 +1,14 @@
 package imageserver
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
+	observable "github.com/GianlucaGuarini/go-observable"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -18,10 +21,217 @@ func extractResourceFromRequestURI(r string) string {
 	return ""
 }
 
+var files = map[string]int{}
+var o *observable.Observable = observable.New()
+
 func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	notifier, ok := w.(http.CloseNotifier)
+	if !ok {
+		panic("expected http.ResponseWriter to be an http.CloseNotifier")
+	}
+	// debugMode := false
+	//
+	// if r.Referer() == "" {
+	// 	debugMode = true
+	// }
+	// paramUser := ps.ByName("user")
+	paramModifiers := ps.ByName("modifiers")
+	paramResource := extractResourceFromRequestURI(r.RequestURI)
+	version := fmt.Sprint(hash(paramResource + paramModifiers))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := make(chan string)
+
+	onReady := func() {
+		fmt.Println("done" + version)
+		close(ch)
+		ctx.Done()
+	}
+
+	if value, ok := files[version]; ok {
+		if value == 1 {
+			go func() {
+				o.On("done"+version, onReady)
+			}()
+		}
+		if value == 2 {
+			fmt.Println("value 2")
+			fmt.Fprint(w, "processing completed")
+			close(ch)
+			ctx.Done()
+		}
+	} else {
+		files[version] = 1
+		go func() {
+			select {
+			case <-time.After(time.Second * 5):
+				files[version] = 2
+				ch <- "Successful result."
+				fmt.Println("value 3 done", version)
+				o.Trigger("done" + version)
+				ctx.Done()
+			case <-ctx.Done():
+				close(ch)
+			}
+		}()
+	}
+	select {
+	case result := <-ch:
+		fmt.Fprint(w, result)
+		cancel()
+		ctx.Done()
+		return
+	case <-notifier.CloseNotify():
+		o.Off("done"+version, onReady)
+		fmt.Println("Client has disconnected.")
+	}
+	cancel()
+	<-ch
+}
+
+// var files = map[int]int{}
+// var o *observable.Observable = observable.New()
+//
+// func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+//
+// 	ctx, cancel := context.WithCancel(context.Background())
+// 	ch := make(chan string)
+//
+// 	if value, ok := files[1]; ok {
+// 		if value == 1 {
+// 			go func() {
+// 				o.On("done", func() {
+// 					fmt.Println("value 1 processed")
+// 					close(ch)
+// 					ctx.Done()
+// 				})
+// 			}()
+// 		}
+// 		if value == 2 {
+// 			fmt.Println("value 2")
+// 			fmt.Fprint(w, "processing completed")
+// 			close(ch)
+// 			ctx.Done()
+// 		}
+// 	} else {
+// 		files[1] = 1
+// 		go func() {
+// 			select {
+// 			case <-time.After(time.Second * 3):
+// 				files[1] = 2
+// 				ch <- "Successful result."
+// 				fmt.Println("value 3 done")
+// 				o.Trigger("done")
+// 				ctx.Done()
+// 			case <-ctx.Done():
+// 				close(ch)
+// 			}
+// 		}()
+//
+// 	}
+//
+// 	// go func() {
+// 	// 	select {
+// 	// 	case <-time.After(time.Second * 3):
+// 	// 		ch <- "Successful result."
+// 	// 	case <-ctx.Done():
+// 	// 		close(ch)
+// 	// 	}
+// 	// }()
+//
+// 	select {
+// 	case result := <-ch:
+// 		fmt.Fprint(w, result)
+// 		cancel()
+// 		ctx.Done()
+// 		return
+// 	}
+//
+// }
+
+// var files = map[int]int{}
+// var o *observable.Observable = observable.New()
+//
+// func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+//
+// 	//ctx := r.Context()
+// 	log.Printf("handler started")
+// 	defer log.Printf("hander ended")
+// 	// select {
+// 	// case <-time.After(5 * time.Second):
+// 	// 	fmt.Println(w, "hello")
+// 	// case <-ctx.Done():
+// 	// 	log.Print(ctx.Err())
+// 	// 	http.Error(w, ctx.Err().Error(), http.StatusInternalServerError)
+// 	// }
+// 	ctx, cancel := context.WithCancel(context.Background())
+//
+// 	if value, ok := files[1]; ok {
+// 		if value == 1 {
+// 			o.On("ready", func(message string, ctx context.Context, ch chan<- string) {
+// 				fmt.Println("ready", message)
+// 				fmt.Fprint(w, "sfsdfsdf")
+// 				cancel()
+// 				fmt.Println(ctx)
+// 				ctx.Done()
+// 				return
+// 			})
+// 			fmt.Println("processing")
+// 		}
+// 		if value == 2 {
+// 			fmt.Println("processing completed")
+// 			fmt.Fprint(w, "processing completed")
+// 			cancel()
+// 		}
+// 	}
+//
+// 	ch := make(chan string)
+//
+// 	// doesn't exists in cache, perform operation
+// 	if _, ok := files[1]; !ok {
+// 		o.On("ready", func(message string, ctx context.Context, ch chan<- string) {
+// 			fmt.Println("ready", message)
+// 			fmt.Fprint(w, message)
+// 			cancel()
+// 			return
+// 		})
+// 		files[1] = 1 // is processing
+// 		go longOperation(ctx, ch, o)
+// 		// select {
+// 		// case <-time.After(10 * time.Second):
+// 		// 	o.Trigger("ready", "done")
+// 		// 	files[1] = 2 // done
+// 		// 	fmt.Println("timeout 1")
+// 		// }
+// 	}
+// 	select {
+// 	case result := <-ch:
+// 		o.Trigger("ready", result, ctx, ch)
+// 		fmt.Fprint(w, result)
+// 		cancel()
+// 		return
+// 	}
+// 	cancel()
+// 	<-ch
+//
+// }
+//
+// func longOperation(ctx context.Context, ch chan<- string, o *observable.Observable) {
+// 	// Simulate long operation.
+// 	// Change it to more than 10 seconds to get server timeout.
+// 	select {
+// 	case <-time.After(time.Second * 3):
+// 		// o.Trigger("ready", "done", ctx, ch)
+// 		files[1] = 2
+// 		ch <- "Successful result."
+// 	case <-ctx.Done():
+// 		close(ch)
+// 	}
+// }
+
+func Indexsdf(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	debugMode := false
-	fmt.Println("r.Referer() ", r.Referer())
 
 	if r.Referer() == "" {
 		debugMode = true
@@ -48,15 +258,11 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	})
 
 	if len(resource) == 0 {
-		fmt.Println("failed to load data")
 		writeError(w)
 		return
 	}
 
 	usageStats := getUsage(paramUser)
-
-	fmt.Println("getResourceInfo0 ", resource[0].ID)
-	fmt.Println("getResourceInfo1 ", resource[1].ID)
 
 	// 1. Serve image from cache
 	servedFromCache, e := serveImageFromCache(resource, w, r, usageStats, debugMode)
@@ -86,7 +292,6 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	fmt.Println("Beginning to perform image transformation...")
 	modifiers, err := parseModifiers(paramModifiers)
-	fmt.Println("modifiers", modifiers)
 	if err != nil {
 		writeError(w)
 		return
@@ -112,7 +317,6 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			fmt.Println("Operation is not allowed.")
 			return
 		}
-		fmt.Println("originalResource ", originalResource.Hash)
 	} else {
 		fmt.Println("Resource doesn't exists.")
 		/*
@@ -126,6 +330,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		})
 
 		if errRemoteOrigin != nil {
+			fmt.Println(errRemoteOrigin)
 			writeError(w)
 			return
 		}

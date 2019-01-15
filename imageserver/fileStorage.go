@@ -19,7 +19,6 @@ type FileObject struct {
 }
 
 func SaveObject(object FileObject) {
-	fmt.Println("writing file...")
 	r := bytes.NewReader(object.Body)
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx, option.WithCredentialsFile("MyProject-89e0f34eb7a6.json"))
@@ -45,7 +44,6 @@ func SaveObject(object FileObject) {
 	// if err := acl.Set(ctx, storage.AllUsers, storage.RoleReader); err != nil {
 	// 	panic(err)
 	// }
-	fmt.Println("done writing file")
 }
 
 func DeleteFiles(files []*models.File, masterIds map[int]*models.File) error {
@@ -56,7 +54,6 @@ func DeleteFiles(files []*models.File, masterIds map[int]*models.File) error {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 	var d []string
-	fmt.Println("files to delete", files)
 	for i := 0; i < len(files); i += 1 {
 		f := files[i]
 		prefix := fmt.Sprintf("%d/%s", f.UserId, f.Hash)
@@ -84,7 +81,6 @@ func DeleteFiles(files []*models.File, masterIds map[int]*models.File) error {
 	}
 
 	for j := 0; j < len(d); j += 1 {
-		fmt.Println("deleting", d[j])
 		o := client.Bucket(bucketName).Object(d[j])
 		if err := o.Delete(ctx); err != nil {
 			//return err

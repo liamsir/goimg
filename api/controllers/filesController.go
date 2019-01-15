@@ -27,7 +27,6 @@ var envoirment = "local"
 
 func init() {
 	port := os.Getenv("PORT")
-	fmt.Println("port", port)
 	if port == "3001" {
 		serverUrl = "http://localhost:3000"
 	} else {

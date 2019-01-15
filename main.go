@@ -6,12 +6,22 @@ import (
 	"imgserver/api/controllers"
 	"imgserver/imageserver"
 	"imgserver/template"
-	"log"
 	"net/http"
 	"os"
 
+	"github.com/dimiro1/banner"
 	"github.com/julienschmidt/httprouter"
 )
+
+func init() {
+	isEnabled := true
+	isColorEnabled := true
+	data, err := os.Open("nyancat.txt")
+	if err != nil {
+		panic("meow :(")
+	}
+	banner.Init(os.Stdout, isEnabled, isColorEnabled, data)
+}
 
 func main() {
 
@@ -111,6 +121,6 @@ func main() {
 	})
 
 	m := app.JwtAuthentication(router)
-	log.Fatal(http.ListenAndServe(":"+port, m))
+	http.ListenAndServe(":"+port, m)
 
 }

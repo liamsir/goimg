@@ -19,7 +19,6 @@ func checkRemoteImageSizeAndType(url string) ([]byte, error) {
 		"image/png":  true,
 	}
 
-	fmt.Println("remote url", url)
 	req, err := http.NewRequest("HEAD", url, nil)
 
 	if err != nil {
@@ -35,7 +34,6 @@ func checkRemoteImageSizeAndType(url string) ([]byte, error) {
 		return nil, fmt.Errorf("Error fetching image http headers: (status=%d) (url=%s)", res.StatusCode, req.URL.String())
 	}
 	contentLength, _ := strconv.Atoi(res.Header.Get("Content-Length"))
-	fmt.Printf("content length: %d \n", contentLength)
 	if contentLength > MaxAllowedSize {
 		return nil, fmt.Errorf("Content-Length %d exceeds maximum allowed %d bytes", contentLength, MaxAllowedSize)
 	}

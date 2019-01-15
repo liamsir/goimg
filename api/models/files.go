@@ -195,9 +195,6 @@ func GetMasterHashForVersionIds(userId int, files string) map[int]*File {
 }
 
 func GetFilesForHash(master string, version string, username string) []*File {
-	fmt.Println(master)
-	fmt.Println(version)
-	fmt.Println(username)
 	files := make([]*File, 0)
 
 	err := GetDB().Table("files").Where(`(hash = ? and type = 0) or hash = ? and user_id = (select id from "users" where username = $3)`, master, version, username).Find(&files).Error
@@ -205,6 +202,5 @@ func GetFilesForHash(master string, version string, username string) []*File {
 		fmt.Println(err)
 		return nil
 	}
-	fmt.Println("files", files)
 	return files
 }

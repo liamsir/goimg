@@ -5,4 +5,5 @@ var connectionString string = "postgres://jxbnzxtecqvcsv:9f603a3b7a60b5583f668fa
 // var connectionString string = "postgresql://rootgoimgserver:9f603a3b7a60b5583f66@goimgserver.cglo5epcd2hd.us-east-2.rds.amazonaws.com:5432/goimgserver"
 var storageBucketUrl string = "https://storage.googleapis.com/imgmdf"
 var storageBucketName string = "imgmdf"
+var redisHost string = "18.220.240.4:6379"
 var redisPwd string = "D+zs1DGBjBcO8evHrTvaGYyygVr+hmIDFCn21xTooF5X7Rioc44Ay/av4/mBx2r6J6NqC68CMvZSZ1vB"

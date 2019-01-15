@@ -12,7 +12,7 @@ type CheckOriginParams struct {
 }
 
 func CheckOrigin(params CheckOriginParams) error {
-	allowedDomains := getAllowedDomains(params.UserName, 0)
+	allowedDomains := getAllowedDomains(params.UserName, 1)
 
 	if params.Request.Referer() == "" || len(allowedDomains) == 0 {
 		return nil
@@ -34,7 +34,7 @@ type checkRemoteOriginParams struct {
 }
 
 func checkRemoteOrigin(params checkRemoteOriginParams) error {
-	allowedDomains := getAllowedDomains(params.UserName, 1)
+	allowedDomains := getAllowedDomains(params.UserName, 2)
 	if params.UrlStr == "" {
 		return fmt.Errorf("Domain not allowed.")
 	}
@@ -42,7 +42,7 @@ func checkRemoteOrigin(params checkRemoteOriginParams) error {
 	if err != nil {
 		return fmt.Errorf("Failed to parse resource url.")
 	}
-	_, ok := allowedDomains[u.Hostname()]
+	_, ok := allowedDomains[u.Scheme+"://"+u.Hostname()]
 	if !ok {
 		return fmt.Errorf("Domain not allowed.")
 	}

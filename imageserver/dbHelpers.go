@@ -34,7 +34,6 @@ func getResourceInfo(params getFileParams) map[uint]models.File {
 	resp := models.GetFilesForHash(master, version, userName)
 	res := make(map[uint]models.File)
 	for _, element := range resp {
-		fmt.Println("elem", element)
 		res[element.Type] = *element
 	}
 	return res
@@ -106,3 +105,9 @@ func logRequest(requestInfo requestEntity) error {
 func getUsage(userName string) map[int]int {
 	return models.GetUsage(userName)
 }
+
+// func getUsageForAllUsers() []*UserUsage {
+// 	return models.GetUsageForAllUsers()
+// }
+//
+// func getFilesForAllUsers() list

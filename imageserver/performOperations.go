@@ -42,7 +42,6 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 		return false, err
 	}
 	buf, err := fetchImage(urlSigned)
-	fmt.Println("buf length", len(buf))
 
 	if err != nil {
 		fmt.Println("failed to fetch image")
@@ -86,7 +85,6 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 		bufOut := new(bytes.Buffer)
 		err = jpeg.Encode(bufOut, img, nil)
 		sendBuf := bufOut.Bytes()
-		fmt.Println("length of sendBuf", len(sendBuf))
 		//save metadata in db
 		newFile, err := saveFileEntity(fileEntity{
 			Type:                1,

@@ -100,6 +100,29 @@ func GetUsage(userId string) map[int]int {
 	return res
 }
 
+type UserUsage struct {
+	UserName string
+	Usage    map[int]int
+}
+
+func GetUsageForAllUsers() map[string]map[int]int {
+	// res := make([]*UserUsage, 0)
+	// _, err := GetDB().Table("logs").Select(`"type" as type, count(Id) as total`).Group("type").Rows()
+	// if err != nil {
+	// 	return nil
+	// }
+	// // for rows.Next() {
+	// // 	usage := {}
+	// // 	err = rows.Scan(&requestType, &requestCount)
+	// // 	if err != nil {
+	// // 		log.Fatal(err)
+	// // 	}
+	// // 	res[requestType] = requestCount
+	// // }
+	// return res
+	return nil
+}
+
 type LogGroup struct {
 	Type      uint      `json:"type"`
 	Total     uint      `json:"total"`
