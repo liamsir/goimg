@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -21,54 +20,86 @@ func extractResourceFromRequestURI(r string) string {
 	return ""
 }
 
-var files = map[string]int{}
 var o *observable.Observable = observable.New()
+
+// func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+// }
 
 func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	notifier, ok := w.(http.CloseNotifier)
 	if !ok {
 		panic("expected http.ResponseWriter to be an http.CloseNotifier")
 	}
-	// debugMode := false
-	//
-	// if r.Referer() == "" {
-	// 	debugMode = true
-	// }
-	// paramUser := ps.ByName("user")
+	debugMode := false
+
+	if r.Referer() == "" {
+		debugMode = true
+	}
+
+	paramUser := ps.ByName("user")
 	paramModifiers := ps.ByName("modifiers")
 	paramResource := extractResourceFromRequestURI(r.RequestURI)
 	version := fmt.Sprint(hash(paramResource + paramModifiers))
+
+	errOrigin := CheckOrigin(CheckOriginParams{
+		UserName: paramUser,
+		Request:  r,
+	})
+
+	if errOrigin != nil {
+		writeError(w)
+		return
+	}
+	servedFromCache, e := serveImageFromCache(paramUser, paramResource, paramModifiers, w, r, debugMode)
+
+	if e != nil {
+		return
+	}
+
+	if servedFromCache {
+		fileMeta, ok := fileMeta(paramUser, version)
+		if ok {
+			go logRequest(requestEntity{
+				Body:   paramResource + "/" + paramModifiers,
+				FileId: int(fileMeta.FileId),
+				UserId: int(fileMeta.UserId),
+				Type:   0,
+			})
+		}
+		fmt.Println("served from cache.")
+		return
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	ch := make(chan string)
 
 	onReady := func() {
-		fmt.Println("done" + version)
+		fmt.Println("done" + paramUser + version)
 		close(ch)
 		ctx.Done()
 	}
 
-	if value, ok := files[version]; ok {
-		if value == 1 {
+	if value, ok := fileStatus(paramUser, version); ok {
+		fmt.Println("value ", value)
+		if value == 2 { //processing, wait
 			go func() {
-				o.On("done"+version, onReady)
+				o.On("done"+paramUser+version, onReady)
 			}()
 		}
-		if value == 2 {
-			fmt.Println("value 2")
+		if value == 1 { //processing completed
 			fmt.Fprint(w, "processing completed")
 			close(ch)
 			ctx.Done()
 		}
 	} else {
-		files[version] = 1
+		setFileStatus(paramUser, version, 2)
 		go func() {
 			select {
 			case <-time.After(time.Second * 5):
-				files[version] = 2
+				setFileStatus(paramUser, version, 1)
 				ch <- "Successful result."
-				fmt.Println("value 3 done", version)
-				o.Trigger("done" + version)
+				o.Trigger("done" + paramUser + version)
 				ctx.Done()
 			case <-ctx.Done():
 				close(ch)
@@ -82,7 +113,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		ctx.Done()
 		return
 	case <-notifier.CloseNotify():
-		o.Off("done"+version, onReady)
+		o.Off("done"+paramUser+version, onReady)
 		fmt.Println("Client has disconnected.")
 	}
 	cancel()
@@ -91,12 +122,12 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 // var files = map[int]int{}
 // var o *observable.Observable = observable.New()
-//
-// func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-//
+
+//func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
 // 	ctx, cancel := context.WithCancel(context.Background())
 // 	ch := make(chan string)
-//
+
 // 	if value, ok := files[1]; ok {
 // 		if value == 1 {
 // 			go func() {
@@ -127,9 +158,9 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 // 				close(ch)
 // 			}
 // 		}()
-//
+
 // 	}
-//
+
 // 	// go func() {
 // 	// 	select {
 // 	// 	case <-time.After(time.Second * 3):
@@ -138,7 +169,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 // 	// 		close(ch)
 // 	// 	}
 // 	// }()
-//
+
 // 	select {
 // 	case result := <-ch:
 // 		fmt.Fprint(w, result)
@@ -146,14 +177,14 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 // 		ctx.Done()
 // 		return
 // 	}
-//
+
 // }
 
 // var files = map[int]int{}
 // var o *observable.Observable = observable.New()
-//
+
 // func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-//
+
 // 	//ctx := r.Context()
 // 	log.Printf("handler started")
 // 	defer log.Printf("hander ended")
@@ -165,7 +196,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 // 	// 	http.Error(w, ctx.Err().Error(), http.StatusInternalServerError)
 // 	// }
 // 	ctx, cancel := context.WithCancel(context.Background())
-//
+
 // 	if value, ok := files[1]; ok {
 // 		if value == 1 {
 // 			o.On("ready", func(message string, ctx context.Context, ch chan<- string) {
@@ -184,9 +215,9 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 // 			cancel()
 // 		}
 // 	}
-//
+
 // 	ch := make(chan string)
-//
+
 // 	// doesn't exists in cache, perform operation
 // 	if _, ok := files[1]; !ok {
 // 		o.On("ready", func(message string, ctx context.Context, ch chan<- string) {
@@ -213,8 +244,9 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 // 	}
 // 	cancel()
 // 	<-ch
-//
+
 // }
+
 //
 // func longOperation(ctx context.Context, ch chan<- string, o *observable.Observable) {
 // 	// Simulate long operation.
@@ -229,162 +261,162 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 // 	}
 // }
 
-func Indexsdf(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+// func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
-	debugMode := false
+// 	debugMode := false
 
-	if r.Referer() == "" {
-		debugMode = true
-	}
-	paramUser := ps.ByName("user")
-	paramModifiers := ps.ByName("modifiers")
-	paramResource := extractResourceFromRequestURI(r.RequestURI) //ps.ByName("resource")[1:]
+// 	if r.Referer() == "" {
+// 		debugMode = true
+// 	}
+// 	paramUser := ps.ByName("user")
+// 	paramModifiers := ps.ByName("modifiers")
+// 	paramResource := extractResourceFromRequestURI(r.RequestURI) //ps.ByName("resource")[1:]
 
-	//validate origin
-	errOrigin := CheckOrigin(CheckOriginParams{
-		UserName: paramUser,
-		Request:  r,
-	})
+// 	//validate origin
+// 	errOrigin := CheckOrigin(CheckOriginParams{
+// 		UserName: paramUser,
+// 		Request:  r,
+// 	})
 
-	if errOrigin != nil {
-		writeError(w)
-		return
-	}
+// 	if errOrigin != nil {
+// 		writeError(w)
+// 		return
+// 	}
 
-	resource := getResourceInfo(getFileParams{
-		userName:  paramUser,
-		modifiers: paramModifiers,
-		resource:  paramResource,
-	})
+// 	resource := getResourceInfo(getFileParams{
+// 		userName:  paramUser,
+// 		modifiers: paramModifiers,
+// 		resource:  paramResource,
+// 	})
 
-	if len(resource) == 0 {
-		writeError(w)
-		return
-	}
+// 	if len(resource) == 0 {
+// 		writeError(w)
+// 		return
+// 	}
 
-	usageStats := getUsage(paramUser)
+// 	usageStats := getUsage(paramUser)
 
-	// 1. Serve image from cache
-	servedFromCache, e := serveImageFromCache(resource, w, r, usageStats, debugMode)
+// 	// 1. Serve image from cache
+// 	servedFromCache, e := serveImageFromCache(resource, w, r, usageStats, debugMode)
 
-	if e != nil {
-		return
-	}
+// 	if e != nil {
+// 		return
+// 	}
 
-	if servedFromCache {
-		fmt.Println("Served from cache.")
-		return
-	}
+// 	if servedFromCache {
+// 		fmt.Println("served from cache.")
+// 		return
+// 	}
 
-	if paramModifiers == "" {
-		servedOriginalImage, e := serveOriginalImage(resource, w, r, usageStats, debugMode)
-		if e != nil || servedOriginalImage {
-			logRequest(requestEntity{
-				Body:   resource[0].Name,
-				FileId: int(resource[0].ID),
-				UserId: int(resource[0].UserId),
-				Type:   1,
-			})
-			fmt.Println("Served original image.")
-			return
-		}
-	}
+// 	if paramModifiers == "" {
+// 		servedOriginalImage, e := serveOriginalImage(resource, w, r, usageStats, debugMode)
+// 		if e != nil || servedOriginalImage {
+// 			logRequest(requestEntity{
+// 				Body:   resource[0].Name,
+// 				FileId: int(resource[0].ID),
+// 				UserId: int(resource[0].UserId),
+// 				Type:   1,
+// 			})
+// 			fmt.Println("served original image.")
+// 			return
+// 		}
+// 	}
 
-	fmt.Println("Beginning to perform image transformation...")
-	modifiers, err := parseModifiers(paramModifiers)
-	if err != nil {
-		writeError(w)
-		return
-	}
-	var originalResourceUrl string
-	var userId int
-	var fileId int
-	var fileHash string
+// 	fmt.Println("beginning to perform image transformation...")
+// 	modifiers, err := parseModifiers(paramModifiers)
+// 	if err != nil {
+// 		writeError(w)
+// 		return
+// 	}
+// 	var originalResourceUrl string
+// 	var userId int
+// 	var fileId int
+// 	var fileHash string
 
-	if originalResource, ok := resource[0]; ok {
-		// 2. Check if user has permission to perform operations
-		if operationsAllowed(originalResource.AllowedOperations, paramModifiers) {
-			originalResourceUrl =
-				fmt.Sprintf("%s/%d/%s",
-					storageBucketUrl,
-					originalResource.UserId,
-					originalResource.Hash,
-				)
-			userId = int(originalResource.UserId)
-			fileId = int(originalResource.ID)
-			fileHash = originalResource.Hash
-		} else {
-			fmt.Println("Operation is not allowed.")
-			return
-		}
-	} else {
-		fmt.Println("Resource doesn't exists.")
-		/*
-			4. If resource doesn't exists, check if resource is url
-			If it's url, then try to download the resource and save in
-			blob storage and in db
-		*/
-		errRemoteOrigin := checkRemoteOrigin(checkRemoteOriginParams{
-			UserName: paramUser,
-			UrlStr:   paramResource,
-		})
+// 	if originalResource, ok := resource[0]; ok {
+// 		// 2. Check if user has permission to perform operations
+// 		if operationsAllowed(originalResource.AllowedOperations, paramModifiers) {
+// 			originalResourceUrl =
+// 				fmt.Sprintf("%s/%d/%s",
+// 					storageBucketUrl,
+// 					originalResource.UserId,
+// 					originalResource.Hash,
+// 				)
+// 			userId = int(originalResource.UserId)
+// 			fileId = int(originalResource.ID)
+// 			fileHash = originalResource.Hash
+// 		} else {
+// 			fmt.Println("operation is not allowed.")
+// 			return
+// 		}
+// 	} else {
+// 		fmt.Println("resource doesn't exists.")
+// 		/*
+// 			4. If resource doesn't exists, check if resource is url
+// 			If it's url, then try to download the resource and save in
+// 			blob storage and in db
+// 		*/
+// 		errRemoteOrigin := checkRemoteOrigin(checkRemoteOriginParams{
+// 			UserName: paramUser,
+// 			UrlStr:   paramResource,
+// 		})
 
-		if errRemoteOrigin != nil {
-			fmt.Println(errRemoteOrigin)
-			writeError(w)
-			return
-		}
+// 		if errRemoteOrigin != nil {
+// 			fmt.Println(errRemoteOrigin)
+// 			writeError(w)
+// 			return
+// 		}
 
-		_, err := url.ParseRequestURI(paramResource)
-		if err != nil {
-			return
-		}
+// 		_, err := url.ParseRequestURI(paramResource)
+// 		if err != nil {
+// 			return
+// 		}
 
-		fmt.Println("Downloading remote resource and storing...")
-		newFile, err := downloadResourceAndSaveInBlob(
-			downloadAndSaveObjectParams{
-				ResourceUrl: paramResource,
-				UserName:    paramUser,
-			},
-			usageStats,
-		)
-		userId = newFile.UserId
-		fileId = newFile.Id
-		fileHash = newFile.Hash
-		originalResourceUrl = newFile.ResourceURL
-		fmt.Println("remote resource ", originalResourceUrl)
-		if err != nil {
-			fmt.Println("failed to fetch remote resource", originalResourceUrl)
-			writeError(w)
-			return
-		}
-	}
+// 		fmt.Println("downloading remote resource and storing...")
+// 		newFile, err := downloadResourceAndSaveInBlob(
+// 			downloadAndSaveObjectParams{
+// 				ResourceUrl: paramResource,
+// 				UserName:    paramUser,
+// 			},
+// 			usageStats,
+// 		)
+// 		userId = newFile.UserId
+// 		fileId = newFile.Id
+// 		fileHash = newFile.Hash
+// 		originalResourceUrl = newFile.ResourceURL
+// 		fmt.Println("remote resource ", originalResourceUrl)
+// 		if err != nil {
+// 			fmt.Println("failed to fetch remote resource", originalResourceUrl)
+// 			writeError(w)
+// 			return
+// 		}
+// 	}
 
-	fmt.Println("performing operations...", originalResourceUrl)
-	status, err := performOperationsAndWriteImageToRequest(
-		performOperationsParam{
-			resourceUrl:     originalResourceUrl,
-			modifiers:       modifiers,
-			modifiersString: paramModifiers,
-			userName:        paramUser,
-			resource:        paramResource,
-			userId:          userId,
-			resourceHash:    fileHash,
-			fileId:          fileId,
-		}, w, usageStats)
-	if !status || err != nil {
-		writeError(w)
-		return
-	}
-	logRequest(requestEntity{
-		Body:   resource[0].Name + "/" + paramModifiers,
-		FileId: fileId,
-		UserId: userId,
-		Type:   3,
-	})
-	fmt.Println("end of performing operations")
-	if err != nil {
-		fmt.Println("failed to perform operations")
-		return
-	}
-}
+// 	fmt.Println("performing operations...", originalResourceUrl)
+// 	status, err := performOperationsAndWriteImageToRequest(
+// 		performOperationsParam{
+// 			resourceUrl:     originalResourceUrl,
+// 			modifiers:       modifiers,
+// 			modifiersString: paramModifiers,
+// 			userName:        paramUser,
+// 			resource:        paramResource,
+// 			userId:          userId,
+// 			resourceHash:    fileHash,
+// 			fileId:          fileId,
+// 		}, w, usageStats)
+// 	if !status || err != nil {
+// 		writeError(w)
+// 		return
+// 	}
+// 	logRequest(requestEntity{
+// 		Body:   resource[0].Name + "/" + paramModifiers,
+// 		FileId: fileId,
+// 		UserId: userId,
+// 		Type:   3,
+// 	})
+// 	fmt.Println("end of performing operations")
+// 	if err != nil {
+// 		fmt.Println("failed to perform operations")
+// 		return
+// 	}
+// }

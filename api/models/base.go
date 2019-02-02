@@ -20,7 +20,7 @@ func init() {
 	}
 
 	db = conn
-	// db.LogMode(true)
+	db.LogMode(true)
 	// db.Debug().AutoMigrate(&User{}, &File{}, &Log{}, &Domain{}) //Database migration
 }
 

@@ -45,28 +45,57 @@ func fetchImageAndWriteToResponse(url string, w http.ResponseWriter) {
 	writeFileToResponseWriter(buf, w)
 }
 
-func serveImageFromCache(resource map[uint]models.File, w http.ResponseWriter, r *http.Request, usageStats map[int]int, debug bool) (bool, error) {
+// func serveImageFromCache(resource map[uint]models.File, w http.ResponseWriter, r *http.Request, usageStats map[int]int, debug bool) (bool, error) {
 
-	if cachedResource, ok := resource[1]; ok {
-		originalResource, ok := resource[0]
+// 	if cachedResource, ok := resource[1]; ok {
+// 		originalResource, ok := resource[0]
+// 		if !ok {
+// 			return false, fmt.Errorf("Error.")
+// 		}
+// 		_, err := checkLimit(servedFromCache, usageStats)
+// 		if err != nil {
+// 			return false, fmt.Errorf("Error.")
+// 		}
+
+// 		logRequest(requestEntity{
+// 			Body:   resource[0].Name + "/" + resource[1].Name,
+// 			FileId: int(resource[1].ID),
+// 			UserId: int(resource[1].UserId),
+// 			Type:   0,
+// 		})
+// 		fileName := fmt.Sprintf("%d/%s_/%s",
+// 			cachedResource.UserId,
+// 			originalResource.Hash,
+// 			cachedResource.Hash,
+// 		)
+// 		url, err := signUrl(fileName)
+// 		if err != nil {
+// 			return false, err
+// 		}
+// 		if debug {
+// 			fetchImageAndWriteToResponse(url, w)
+// 		} else {
+// 			http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+// 		}
+
+// 		return true, nil
+// 	}
+// 	return false, nil
+// }
+func serveImageFromCache(paramUser string, paramResource string, paramModifiers string, w http.ResponseWriter, r *http.Request, debug bool) (bool, error) {
+
+	resourceHash := fmt.Sprint(hash(paramResource))
+	version := fmt.Sprint(hash(paramResource + paramModifiers))
+	fmt.Println("version", version)
+	if value, ok := fileStatus(paramUser, version); ok {
 		if !ok {
 			return false, fmt.Errorf("Error.")
 		}
-		_, err := checkLimit(servedFromCache, usageStats)
-		if err != nil {
-			return false, fmt.Errorf("Error.")
-		}
-
-		logRequest(requestEntity{
-			Body:   resource[0].Name + "/" + resource[1].Name,
-			FileId: int(resource[1].ID),
-			UserId: int(resource[1].UserId),
-			Type:   0,
-		})
-		fileName := fmt.Sprintf("%d/%s_/%s",
-			cachedResource.UserId,
-			originalResource.Hash,
-			cachedResource.Hash,
+		fmt.Println(value)
+		fileName := fmt.Sprintf("%s/%s_/%s",
+			paramUser,
+			resourceHash,
+			version,
 		)
 		url, err := signUrl(fileName)
 		if err != nil {
@@ -80,9 +109,42 @@ func serveImageFromCache(resource map[uint]models.File, w http.ResponseWriter, r
 
 		return true, nil
 	}
+
+	// if cachedResource, ok := resource[1]; ok {
+	// 	originalResource, ok := resource[0]
+	// 	if !ok {
+	// 		return false, fmt.Errorf("Error.")
+	// 	}
+	// 	_, err := checkLimit(servedFromCache, usageStats)
+	// 	if err != nil {
+	// 		return false, fmt.Errorf("Error.")
+	// 	}
+
+	// 	logRequest(requestEntity{
+	// 		Body:   resource[0].Name + "/" + resource[1].Name,
+	// 		FileId: int(resource[1].ID),
+	// 		UserId: int(resource[1].UserId),
+	// 		Type:   0,
+	// 	})
+	// 	fileName := fmt.Sprintf("%d/%s_/%s",
+	// 		cachedResource.UserId,
+	// 		originalResource.Hash,
+	// 		cachedResource.Hash,
+	// 	)
+	// 	url, err := signUrl(fileName)
+	// 	if err != nil {
+	// 		return false, err
+	// 	}
+	// 	if debug {
+	// 		fetchImageAndWriteToResponse(url, w)
+	// 	} else {
+	// 		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	// 	}
+
+	// 	return true, nil
+	// }
 	return false, nil
 }
-
 func serveOriginalImage(resource map[uint]models.File, w http.ResponseWriter, r *http.Request, usageStats map[int]int, debug bool) (bool, error) {
 	originalResource, ok := resource[0]
 	if !ok {

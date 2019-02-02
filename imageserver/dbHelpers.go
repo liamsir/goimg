@@ -25,19 +25,19 @@ type getFileParams struct {
 	resource  string
 }
 
-func getResourceInfo(params getFileParams) map[uint]models.File {
+// func getResourceInfo(params getFileParams) map[uint]models.File {
 
-	master := fmt.Sprint(hash(params.resource))
-	version := fmt.Sprint(hash(params.resource + params.modifiers))
-	userName := params.userName
+// 	master := fmt.Sprint(hash(params.resource))
+// 	version := fmt.Sprint(hash(params.resource + params.modifiers))
+// 	userName := params.userName
 
-	resp := models.GetFilesForHash(master, version, userName)
-	res := make(map[uint]models.File)
-	for _, element := range resp {
-		res[element.Type] = *element
-	}
-	return res
-}
+// 	resp := models.GetFilesForHash(master, version, userName)
+// 	res := make(map[uint]models.File)
+// 	for _, element := range resp {
+// 		res[element.Type] = *element
+// 	}
+// 	return res
+// }
 
 func saveFileEntity(newFile fileEntity) (fileEntity, error) {
 
@@ -89,6 +89,14 @@ type requestEntity struct {
 	Type   int32
 }
 
+type requestEntityViewModel struct {
+	Id       int
+	Body     string
+	UserName string
+	FileName string
+	Type     int32
+}
+
 func logRequest(requestInfo requestEntity) error {
 
 	log := models.Log{
@@ -106,8 +114,16 @@ func getUsage(userName string) map[int]int {
 	return models.GetUsage(userName)
 }
 
-// func getUsageForAllUsers() []*UserUsage {
-// 	return models.GetUsageForAllUsers()
-// }
+func getUsageForAllUsers() ([]*models.UserUsage, error) {
+	return models.GetUsageForAllUsers()
+}
+
+func getFilesForAllUsers() ([]*models.UserFile, error) {
+	return models.GetFilesForAllUsers()
+}
+func getDomainsForAllUsers() ([]string, error) {
+	return models.GetDomainsForAllUsers()
+}
+
 //
 // func getFilesForAllUsers() list

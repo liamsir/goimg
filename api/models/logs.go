@@ -101,26 +101,71 @@ func GetUsage(userId string) map[int]int {
 }
 
 type UserUsage struct {
-	UserName string
-	Usage    map[int]int
+	Hash  string
+	Usage int32
 }
 
-func GetUsageForAllUsers() map[string]map[int]int {
-	// res := make([]*UserUsage, 0)
-	// _, err := GetDB().Table("logs").Select(`"type" as type, count(Id) as total`).Group("type").Rows()
-	// if err != nil {
-	// 	return nil
-	// }
-	// // for rows.Next() {
-	// // 	usage := {}
-	// // 	err = rows.Scan(&requestType, &requestCount)
-	// // 	if err != nil {
-	// // 		log.Fatal(err)
-	// // 	}
-	// // 	res[requestType] = requestCount
-	// // }
-	// return res
-	return nil
+func GetUsageForAllUsers() ([]*UserUsage, error) {
+	res := []*UserUsage{}
+	rows, err := GetDB().Table("logs").Where("users.username is not null and users.deleted_at is null and logs.deleted_at is null").Select(`"username", "type" as type, count(logs.Id) as total`).Joins("left join users on logs.user_id = users.id").Group("username, type").Rows()
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	var username string
+	var opType, total int32
+	for rows.Next() {
+		err = rows.Scan(&username, &opType, &total)
+		if err != nil {
+			log.Fatal(err)
+		}
+		res = append(res, &UserUsage{Hash: fmt.Sprintf("_usage_%s%d", username, opType), Usage: total})
+	}
+	return res, nil
+}
+
+type UserFile struct {
+	Hash   string
+	FileId int32
+	UserId int32
+	Status int32
+}
+
+func GetFilesForAllUsers() ([]*UserFile, error) {
+	res := []*UserFile{}
+	rows, err := GetDB().Table("files").Where("users.deleted_at is null and files.deleted_at is null").Select("users.username, users.id, files.id, files.hash").Joins("left join users on files.user_id = users.id").Rows()
+	if err != nil {
+		return nil, err
+	}
+	var userName, fileHash string
+	var fileId, userId int32
+	for rows.Next() {
+		err = rows.Scan(&userName, &userId, &fileId, &fileHash)
+		if err != nil {
+			return nil, err
+		}
+		// res = append(res, fmt.Sprintf("_file_%s%s", userName, fileHash))
+		res = append(res, &UserFile{Hash: fmt.Sprintf("_file_%s%s", userName, fileHash), FileId: fileId, UserId: userId, Status: 1})
+	}
+	return res, nil
+}
+
+func GetDomainsForAllUsers() ([]string, error) {
+	res := make([]string, 0)
+	rows, err := GetDB().Table("domains").Where("users.deleted_at is null and domains.deleted_at is null").Select(`users.username, domains."name", domains."type"`).Joins("left join users on domains.user_id = users.id").Rows()
+	if err != nil {
+		return nil, err
+	}
+	var userName, domainName string
+	var domainType int32
+	for rows.Next() {
+		err = rows.Scan(&userName, &domainName, &domainType)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, fmt.Sprintf("_domain_%s%s%d", userName, domainName, domainType))
+	}
+	return res, nil
 }
 
 type LogGroup struct {

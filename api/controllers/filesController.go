@@ -180,7 +180,7 @@ var UploadImage = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	// upload image
 	var fileObject = imageserver.FileObject{
 		Body: res,
-		Name: fmt.Sprintf("%d/%s", user.ID, fileHash),
+		Name: fmt.Sprintf("%s/%s_/%s", user.Username, fileHash, fileHash),
 	}
 	imageserver.SaveObject(fileObject)
 	// return image url
