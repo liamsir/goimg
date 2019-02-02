@@ -58,6 +58,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	if servedFromCache {
+		incrUsage(paramUser, 0)
 		fileMeta, ok := fileMeta(paramUser, version)
 		if ok {
 			go logRequest(requestEntity{
@@ -66,6 +67,7 @@ func Index(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 				UserId: int(fileMeta.UserId),
 				Type:   0,
 			})
+
 		}
 		fmt.Println("served from cache.")
 		return

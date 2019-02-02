@@ -123,6 +123,9 @@ func fileStatus(userName string, version string) (int, bool) {
 	if err != nil {
 		panic(err)
 	}
+	if len(vals) == 0 || vals[0] == nil {
+		return 0, false
+	}
 	res := vals[0].(string)
 	i, err := strconv.Atoi(res)
 	return i, true
@@ -158,4 +161,19 @@ func setFileStatus(userName string, version string, status int) error {
 		return err
 	}
 	return nil
+}
+
+func incrUsage(userName string, operation int) error {
+	key := fmt.Sprintf("_usage_%s%d", userName, operation)
+	err := client.Incr(key).Err()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetUsage(userName string, t int) (string, error) {
+	key := fmt.Sprintf("_usage_%s%d", userName, t)
+	val, err := client.Get(key).Result()
+	return val, err
 }

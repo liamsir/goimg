@@ -91,6 +91,22 @@ func serveImageFromCache(paramUser string, paramResource string, paramModifiers 
 		if !ok {
 			return false, fmt.Errorf("Error.")
 		}
+
+		if value != 1 {
+			return false, nil
+		}
+
+		sfc, err := GetUsage(paramUser, servedFromCache)
+		if err != nil {
+			return false, fmt.Errorf("Error.")
+		}
+		isfc, _ := strconv.Atoi(sfc)
+		_, errc := checkLimit(servedFromCache, map[int]int{servedFromCache: isfc})
+		if errc != nil {
+			writeError(w)
+			return false, fmt.Errorf("Error.")
+		}
+
 		fmt.Println(value)
 		fileName := fmt.Sprintf("%s/%s_/%s",
 			paramUser,
