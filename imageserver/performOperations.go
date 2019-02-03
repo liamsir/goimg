@@ -33,14 +33,16 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 		return false, fmt.Errorf("Error.")
 	}
 
-	fileName := fmt.Sprintf("%d/%s",
-		params.userId,
+	fileName := fmt.Sprintf("%s/%s_/%s",
+		params.userName,
+		params.resourceHash,
 		params.resourceHash,
 	)
 	urlSigned, err := signUrl(fileName)
 	if err != nil {
 		return false, err
 	}
+	fmt.Println("urlSigned", urlSigned)
 	buf, err := fetchImage(urlSigned)
 
 	if err != nil {
@@ -101,7 +103,7 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 		resourceHash := hash(params.resource)
 		var fileObject = FileObject{
 			Body: sendBuf,
-			Name: fmt.Sprintf("%d/%d_/%s", newFile.UserId, resourceHash, newFile.Hash),
+			Name: fmt.Sprintf("%s/%d_/%s", newFile.UserName, resourceHash, newFile.Hash),
 		}
 		SaveObject(fileObject)
 		// 6. Return edited image

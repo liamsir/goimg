@@ -103,9 +103,11 @@ func CheckOrigin(params CheckOriginParams) error {
 	if err != nil {
 		return fmt.Errorf("Failed to parse requeset referer.")
 	}
-	key := fmt.Sprintf("_domain_%s%s", params.UserName, u.Hostname())
+	key := fmt.Sprintf("_domain_%s%s", params.UserName, u.Scheme+"://"+u.Hostname()+"1")
 	val, err := client.Get(key).Result()
 	if err != nil {
+		fmt.Println(key)
+
 		return fmt.Errorf("Domain not allowed.")
 	}
 
@@ -155,6 +157,19 @@ func setFileStatus(userName string, version string, status int) error {
 	err := client.HMSet(key, map[string]interface{}{
 		"FileId": 0,
 		"UserId": 0,
+		"Status": status,
+	}).Err()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateFileStatus(userName string, version string, status int, fileId int, userId int) error {
+	key := fmt.Sprintf("_file_%s%s", userName, version)
+	err := client.HMSet(key, map[string]interface{}{
+		"FileId": fileId,
+		"UserId": userId,
 		"Status": status,
 	}).Err()
 	if err != nil {

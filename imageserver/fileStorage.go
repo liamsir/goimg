@@ -120,14 +120,13 @@ func downloadResourceAndSaveInBlob(params downloadAndSaveObjectParams, usageStat
 
 	var fileObject = FileObject{
 		Body: buf,
-		Name: fmt.Sprintf("%d/%s", newFile.UserId, newFile.Hash),
+		Name: fmt.Sprintf("%s/%s", newFile.UserName, newFile.Hash),
 	}
-
 	SaveObject(fileObject)
 	remoteResource :=
 		fmt.Sprintf("%s/%s",
 			storageBucketUrl,
-			fmt.Sprintf("%d/%s", newFile.UserId, newFile.Hash),
+			fmt.Sprintf("%s/%s", newFile.UserName, newFile.Hash),
 		)
 	newFile.ResourceURL = remoteResource
 

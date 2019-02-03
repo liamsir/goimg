@@ -3,7 +3,6 @@ package imageserver
 import (
 	"encoding/json"
 	"fmt"
-	"imgserver/api/models"
 	"net/http"
 	"os"
 	"strconv"
@@ -88,6 +87,7 @@ func serveImageFromCache(paramUser string, paramResource string, paramModifiers 
 	version := fmt.Sprint(hash(paramResource + paramModifiers))
 	fmt.Println("version", version)
 	if value, ok := fileStatus(paramUser, version); ok {
+
 		if !ok {
 			return false, fmt.Errorf("Error.")
 		}
@@ -108,12 +108,14 @@ func serveImageFromCache(paramUser string, paramResource string, paramModifiers 
 		}
 
 		fmt.Println(value)
+		fmt.Println("resourceHash ", resourceHash)
 		fileName := fmt.Sprintf("%s/%s_/%s",
 			paramUser,
 			resourceHash,
 			version,
 		)
 		url, err := signUrl(fileName)
+		fmt.Println("url", url)
 		if err != nil {
 			return false, err
 		}
@@ -160,31 +162,6 @@ func serveImageFromCache(paramUser string, paramResource string, paramModifiers 
 	// 	return true, nil
 	// }
 	return false, nil
-}
-func serveOriginalImage(resource map[uint]models.File, w http.ResponseWriter, r *http.Request, usageStats map[int]int, debug bool) (bool, error) {
-	originalResource, ok := resource[0]
-	if !ok {
-		return false, fmt.Errorf("Error.")
-	}
-	_, err := checkLimit(servedOriginalImage, usageStats)
-	if err != nil {
-		return false, fmt.Errorf("Error.")
-	}
-	fileName := fmt.Sprintf("%d/%s",
-		originalResource.UserId,
-		originalResource.Hash,
-	)
-	url, err := signUrl(fileName)
-	if err != nil {
-		return false, err
-	}
-	if debug {
-		fetchImageAndWriteToResponse(url, w)
-	} else {
-		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-	}
-
-	return true, nil
 }
 
 type SignUrlParams struct {

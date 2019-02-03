@@ -11,22 +11,21 @@ type CheckOriginParams struct {
 	Request  *http.Request
 }
 
-// func CheckOrigin(params CheckOriginParams) error {
-// 	allowedDomains := getAllowedDomains(params.UserName, 1)
-
-// 	if params.Request.Referer() == "" || len(allowedDomains) == 0 {
-// 		return nil
-// 	}
-// 	u, err := url.Parse(params.Request.Referer())
-// 	if err != nil {
-// 		return fmt.Errorf("Failed to parse requeset referer.")
-// 	}
-// 	_, ok := allowedDomains[u.Hostname()]
-// 	if !ok {
-// 		return fmt.Errorf("Domain not allowed.")
-// 	}
-// 	return nil
-// }
+func CheckOriginDb(params CheckOriginParams) error {
+	allowedDomains := getAllowedDomains(params.UserName, 1)
+	if params.Request.Referer() == "" || len(allowedDomains) == 0 {
+		return nil
+	}
+	u, err := url.Parse(params.Request.Referer())
+	if err != nil {
+		return fmt.Errorf("Failed to parse requeset referer.")
+	}
+	_, ok := allowedDomains[u.Scheme+"://"+u.Hostname()]
+	if !ok {
+		return fmt.Errorf("Domain not allowed.")
+	}
+	return nil
+}
 
 type checkRemoteOriginParams struct {
 	UserName string

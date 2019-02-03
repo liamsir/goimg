@@ -126,12 +126,13 @@ var UploadImage = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	}
 
 	//validate origin
-	errOrigin := imageserver.CheckOrigin(imageserver.CheckOriginParams{
+	errOrigin := imageserver.CheckOriginDb(imageserver.CheckOriginParams{
 		UserName: userName,
 		Request:  r,
 	})
 
 	if errOrigin != nil {
+		u.Respond(w, u.Message(false, "Origin not allowed."))
 		return
 	}
 
@@ -210,6 +211,8 @@ var UploadImage = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 	newLog.UserId = user.ID
 	newLog.Type = 4
 	newLog.Create()
+
+	imageserver.UpdateFileStatus(user.Username, newFile.Hash, 1, int(newFile.ID), int(user.ID))
 
 	resp := u.Message(true, "success")
 	resp["imageUrl"] = imageUrl

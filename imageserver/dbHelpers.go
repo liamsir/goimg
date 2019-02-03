@@ -25,19 +25,19 @@ type getFileParams struct {
 	resource  string
 }
 
-// func getResourceInfo(params getFileParams) map[uint]models.File {
+func getResourceInfo(params getFileParams) map[uint]models.File {
 
-// 	master := fmt.Sprint(hash(params.resource))
-// 	version := fmt.Sprint(hash(params.resource + params.modifiers))
-// 	userName := params.userName
+	master := fmt.Sprint(hash(params.resource))
+	version := fmt.Sprint(hash(params.resource + params.modifiers))
+	userName := params.userName
 
-// 	resp := models.GetFilesForHash(master, version, userName)
-// 	res := make(map[uint]models.File)
-// 	for _, element := range resp {
-// 		res[element.Type] = *element
-// 	}
-// 	return res
-// }
+	resp := models.GetFilesForHash(master, version, userName)
+	res := make(map[uint]models.File)
+	for _, element := range resp {
+		res[element.Type] = *element
+	}
+	return res
+}
 
 func saveFileEntity(newFile fileEntity) (fileEntity, error) {
 
