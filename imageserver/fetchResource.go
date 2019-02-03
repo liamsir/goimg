@@ -11,7 +11,7 @@ import (
 
 var MaxAllowedSize int = 15 * 1024 * 1000
 
-func checkRemoteImageSizeAndType(url string) ([]byte, error) {
+func checkRemoteImageSizeAndType(url string, ct *string) ([]byte, error) {
 
 	AllowedMIME := map[string]bool{
 		"image/jpeg": true,
@@ -41,11 +41,13 @@ func checkRemoteImageSizeAndType(url string) ([]byte, error) {
 	if _, ok := AllowedMIME[contentType]; !ok {
 		return nil, fmt.Errorf("Content-Type not allowed")
 	}
+	*ct = contentType
 	return nil, nil
 }
 
-func fetchImage(urlStr string) ([]byte, error) {
-	_, err := checkRemoteImageSizeAndType(urlStr)
+func fetchImage(urlStr string, ct *string) ([]byte, error) {
+	contentType := ""
+	_, err := checkRemoteImageSizeAndType(urlStr, &contentType)
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing url: %v", err)
 	}
@@ -53,6 +55,7 @@ func fetchImage(urlStr string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing url: %v", err)
 	}
+
 	// Perform the request using the default client
 	req, _ := http.NewRequest("GET", url.String(), nil)
 	req.Header.Set("User-Agent", "imgserver/1.0.0")
@@ -82,7 +85,7 @@ func fetchImage(urlStr string) ([]byte, error) {
 	if data.Len() > MaxAllowedSize {
 		return nil, fmt.Errorf("Content-Length %d exceeds maximum allowed %d bytes", data.Len(), MaxAllowedSize)
 	}
-
+	*ct = contentType
 	return data.Bytes(), nil
 }
 

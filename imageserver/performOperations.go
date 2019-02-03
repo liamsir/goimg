@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
+	"image/png"
 	"net/http"
 	"strconv"
 
@@ -38,12 +39,17 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 		params.resourceHash,
 		params.resourceHash,
 	)
+
+	fmt.Println("fileName", fileName)
+
 	urlSigned, err := signUrl(fileName)
 	if err != nil {
 		return false, err
 	}
-	fmt.Println("urlSigned", urlSigned)
-	buf, err := fetchImage(urlSigned)
+
+	contentType := ""
+	buf, err := fetchImage(urlSigned, &contentType)
+	fmt.Println("contentType", contentType)
 
 	if err != nil {
 		fmt.Println("failed to fetch image")
@@ -51,9 +57,21 @@ func performOperationsAndWriteImageToRequest(params performOperationsParam, w ht
 	}
 
 	fileReader := bytes.NewReader(buf)
-	img, err := jpeg.Decode(fileReader)
+	var img image.Image
+	var rerr error
+	// img, err := jpeg.Decode(fileReader)
+	if contentType == "image/jpeg" || contentType == "image/jpg" {
+		res, reserr := jpeg.Decode(fileReader)
+		img = res
+		rerr = reserr
+	} else if contentType == "image/png" {
+		res, reserr := png.Decode(fileReader)
+		img = res
+		rerr = reserr
+	}
 
-	if err != nil {
+	if rerr != nil {
+		fmt.Println(err)
 		fmt.Println("failed to decode image represented as bytes")
 		return false, err
 	}

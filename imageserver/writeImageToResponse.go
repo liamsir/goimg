@@ -37,7 +37,8 @@ func writeError(w http.ResponseWriter) {
 }
 
 func fetchImageAndWriteToResponse(url string, w http.ResponseWriter) {
-	buf, err := fetchImage(url)
+	contentType := ""
+	buf, err := fetchImage(url, &contentType)
 	if err != nil {
 		return
 	}
@@ -115,7 +116,8 @@ func serveImageFromCache(paramUser string, paramResource string, paramModifiers 
 			version,
 		)
 		url, err := signUrl(fileName)
-		fmt.Println("url", url)
+		fmt.Println("fileName", fileName)
+		fmt.Println("url signed", url)
 		if err != nil {
 			return false, err
 		}

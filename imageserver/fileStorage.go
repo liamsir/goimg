@@ -101,7 +101,8 @@ func downloadResourceAndSaveInBlob(params downloadAndSaveObjectParams, usageStat
 	if err != nil {
 		return fileEntity{}, fmt.Errorf("Error.")
 	}
-	buf, err := fetchImage(params.ResourceUrl)
+	contentType := ""
+	buf, err := fetchImage(params.ResourceUrl, &contentType)
 
 	if err != nil {
 		return fileEntity{}, fmt.Errorf("Error.")
