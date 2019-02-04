@@ -98,7 +98,8 @@ var DeleteFile = func(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	}
 	masterIds := models.GetMasterHashForVersionIds(int(user), id)
 	fmt.Println("masterIds", masterIds)
-	err = imageserver.DeleteFiles(filesToDelete, masterIds)
+	userInfo := models.GetUser(user)
+	err = imageserver.DeleteFiles(userInfo, filesToDelete, masterIds)
 	if err != nil {
 		resp := u.Message(false, err.Error())
 		u.Respond(w, resp)
@@ -125,7 +126,7 @@ var UploadImage = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		return
 	}
 
-	//validate origin
+	// validate origin
 	errOrigin := imageserver.CheckOriginDb(imageserver.CheckOriginParams{
 		UserName: userName,
 		Request:  r,
@@ -162,6 +163,7 @@ var UploadImage = func(w http.ResponseWriter, r *http.Request, ps httprouter.Par
 		Username:  userName,
 		Expires:   expires,
 	})
+
 	if errValidating != nil {
 		u.Respond(w, u.Message(false, "There was an error in your request while validating signature."))
 		return
